@@ -1,0 +1,75 @@
+/*
+ * Design tokens — the single source of truth for the Timetable system.
+ * Values are taken verbatim from design/Music_Player_dc.html (artboard 1a),
+ * cross-checked against the brief. Do not hardcode any of these elsewhere.
+ */
+
+:root {
+  /* ---- Surfaces and text -------------------------------------------- */
+  --base: #0b0b0c; /* page background */
+  --raised: #141416; /* mini-player / player-bar surface */
+  --bone: #f2f1ee; /* primary text */
+  --dim: #8a8985; /* secondary text */
+  --dimmer: #6e6d69; /* decorative only — see note below */
+  --signal: #ffb000; /* playing state + progress. The ONLY colour. */
+
+  /*
+   * Accessibility note (plan D2): --dimmer on --base is 3.80:1, below WCAG AA's
+   * 4.5:1. At the 10px sizes the design uses it, the large-text exemption does
+   * not apply. Column labels and inactive tab labels therefore use --dim
+   * (5.62:1). --dimmer is reserved for genuinely decorative marks.
+   */
+
+  /* ---- Lines --------------------------------------------------------- */
+  --divider: rgba(242, 241, 238, 0.07); /* row separator (inset shadow) */
+  --hairline: rgba(242, 241, 238, 0.12); /* top edge of mini-player / tab bar */
+  --rule: rgba(242, 241, 238, 0.14); /* section rules */
+  --outline: rgba(242, 241, 238, 0.16); /* inactive chip / icon-button border */
+
+  /* ---- Literal alphas the canvas uses in exactly one place each ------- */
+  --track: rgba(242, 241, 238, 0.1); /* progress track behind the fill */
+  --scrim: rgba(11, 11, 12, 0.62); /* EQ overlay scrim over artwork */
+  --playing-wash: rgba(255, 176, 0, 0.09); /* playing row background (D7) */
+
+  /* ---- Geometry ------------------------------------------------------ */
+  --gutter: 22px;
+  --radius: 2px; /* controls only. Artwork is square. Nothing else. */
+  --status-bar-h: 54px;
+  --row-h: 56px;
+  --row-gap: 12px;
+  --artwork: 40px;
+  --dl-col: 20px; /* 1a used 16px for a bare check; the 2a DL pill needs 20 */
+  --time-col: 38px;
+  --overflow-col: 44px; /* reserved in the column header so TIME stays aligned */
+  --tap: 44px; /* minimum touch target */
+  --miniplayer-body-h: 62px;
+  --miniplayer-progress-h: 2px;
+  --tabbar-h: 84px;
+  --tabbar-pad-b: env(safe-area-inset-bottom, 22px);
+  --scroll-spacer: 150px; /* clears mini-player (64) + tab bar (84) */
+
+  /* Desktop (>=1024px) */
+  --sidebar-w: 240px;
+  --playerbar-h: 72px;
+
+  /* ---- Type ---------------------------------------------------------- */
+  --sans: 'Instrument Sans Variable', 'Instrument Sans', ui-sans-serif, system-ui, sans-serif;
+  --mono: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+
+  --t-screen-title: 600 27px/1 var(--sans);
+  --t-row-title: 500 14.5px/1.25 var(--sans);
+  --t-row-artist: 400 12px/1.3 var(--sans);
+  --t-meta: 400 11px var(--mono);
+  --t-column-label: 500 10px var(--mono);
+  --t-chip: 500 11px var(--mono);
+  --t-tab: 500 10px var(--mono);
+  --t-duration: 400 12px var(--mono);
+  --t-status: 500 13px var(--mono);
+  --t-dl-pill: 500 9px var(--mono);
+
+  --ls-title: -0.02em;
+  --ls-meta: 0.08em;
+  --ls-column-label: 0.14em;
+  --ls-tab: 0.06em;
+  --ls-dl-pill: 0.1em;
+}

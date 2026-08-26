@@ -1,0 +1,35 @@
+.header {
+  flex: none;
+  padding: 14px var(--gutter) 0;
+}
+
+.titleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.title {
+  font: var(--t-screen-title);
+  letter-spacing: var(--ls-title);
+  min-width: 0;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+}
+
+/* The count line sits on its own line rather than the h1's baseline, to make
+   room for the action cluster (plan D8). */
+.meta {
+  margin-top: 4px;
+  font: var(--t-meta);
+  letter-spacing: var(--ls-meta);
+  color: var(--dim);
+}
+
+.below { margin: 12px 0 10px; }

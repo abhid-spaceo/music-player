@@ -1,0 +1,22 @@
+.shell {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  overflow: hidden;
+  background: var(--base);
+  /* The canvas draws a fake iOS status bar (9:41, signal, battery). A real app
+     must not; we reserve the real inset instead. */
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+.main {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+@media (min-width: 1024px) {
+  .main { margin-left: var(--sidebar-w); }
+}

@@ -1,0 +1,32 @@
+.sidebar { display: none; }
+
+/* Replaces the bottom tab bar at desktop widths (plan D4). */
+@media (min-width: 1024px) {
+  .sidebar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: var(--sidebar-w);
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: var(--gutter) 12px;
+    background: var(--base);
+    box-shadow: inset -1px 0 0 var(--hairline);
+  }
+
+  .link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: var(--tap);
+    padding: 0 10px;
+    border-radius: var(--radius);
+    color: var(--dim);
+    font: var(--t-tab);
+    letter-spacing: var(--ls-tab);
+  }
+
+  .link[aria-current='page'] { color: var(--bone); }
+}

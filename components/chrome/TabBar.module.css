@@ -1,0 +1,37 @@
+.bar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: var(--tabbar-h);
+  box-sizing: border-box;
+  /* 22px fallback is the home-indicator stand-in the canvas hardcodes; the
+     env() only reports a real value because layout.tsx sets viewportFit. */
+  padding: 0 8px var(--tabbar-pad-b);
+  background: var(--base);
+  box-shadow: inset 0 1px 0 var(--hairline);
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  align-items: start;
+}
+
+.tab {
+  height: 56px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  /* One property drives both icon and label: the icons use currentColor.
+     --dim, not --dimmer, for AA at 10px (plan D2). */
+  color: var(--dim);
+}
+
+.tab[aria-current='page'] { color: var(--bone); }
+
+.label { font: var(--t-tab); letter-spacing: var(--ls-tab); }
+
+/* Replaced by the sidebar at desktop widths. */
+@media (min-width: 1024px) {
+  .bar { display: none; }
+}
