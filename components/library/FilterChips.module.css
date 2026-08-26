@@ -1,0 +1,19 @@
+.chips { display: flex; gap: 6px; flex: none; }
+
+.chip {
+  min-height: var(--tap);
+  padding: 0 14px;
+  border-radius: var(--radius);
+  border: 1px solid var(--outline);
+  background: transparent;
+  color: var(--dim);
+  font: var(--t-chip);
+  letter-spacing: var(--ls-meta);
+  white-space: nowrap;
+}
+
+.chip[aria-pressed='true'] {
+  border-color: transparent;
+  background: var(--bone);
+  color: var(--base);
+}

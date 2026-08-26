@@ -1,0 +1,22 @@
+.rule {
+  flex: none;
+  height: 1px;
+  background: var(--rule);
+  margin: 0 var(--gutter);
+}
+
+.list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* Clears the tab bar plus whatever the player panel currently occupies. */
+.spacer { height: var(--scroll-spacer); }
+
+.state {
+  padding: 28px var(--gutter);
+  font: var(--t-row-artist);
+  color: var(--dim);
+}

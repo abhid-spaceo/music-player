@@ -1,0 +1,65 @@
+.wrap {
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--gutter);
+  background: var(--base);
+}
+
+.form { width: 100%; max-width: 320px; }
+
+.title {
+  font: var(--t-screen-title);
+  letter-spacing: var(--ls-title);
+  color: var(--bone);
+}
+
+.meta {
+  margin-top: 6px;
+  font: var(--t-meta);
+  letter-spacing: var(--ls-meta);
+  color: var(--dim);
+}
+
+.rule { height: 1px; background: var(--rule); margin: 22px 0; }
+
+.label {
+  display: block;
+  margin-bottom: 6px;
+  font: var(--t-column-label);
+  letter-spacing: var(--ls-column-label);
+  color: var(--dim);
+}
+
+.input {
+  width: 100%;
+  min-height: var(--tap);
+  padding: 0 12px;
+  margin-bottom: 16px;
+  border: 1px solid var(--outline);
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--bone);
+  font: 400 14.5px var(--sans);
+}
+.input:focus-visible { outline: 2px solid var(--bone); outline-offset: -2px; }
+
+.submit {
+  width: 100%;
+  min-height: var(--tap);
+  border-radius: var(--radius);
+  background: var(--bone);
+  color: var(--base);
+  font: 600 12px var(--mono);
+  letter-spacing: var(--ls-meta);
+}
+.submit:disabled { opacity: 0.5; }
+
+.error {
+  margin-bottom: 14px;
+  font: var(--t-row-artist);
+  color: var(--bone);
+  padding: 10px 12px;
+  border-left: 2px solid var(--dim);
+}

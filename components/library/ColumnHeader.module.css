@@ -1,0 +1,18 @@
+.header {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: var(--row-gap);
+  /* Matches the row's asymmetric padding so every column lines up. */
+  padding: 8px 8px 6px var(--gutter);
+  font: var(--t-column-label);
+  letter-spacing: var(--ls-column-label);
+  /* --dim, not --dimmer: 10px at --dimmer is 3.80:1 and fails WCAG AA. */
+  color: var(--dim);
+}
+
+.title { flex: 1; min-width: 0; }
+.dl { flex: none; width: var(--dl-col); text-align: center; }
+.time { flex: none; width: var(--time-col); text-align: right; }
+/* Reserves the row's overflow button column so TIME stays above the durations. */
+.overflowReserve { flex: none; width: var(--overflow-col); }

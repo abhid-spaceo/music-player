@@ -46,7 +46,8 @@
   --miniplayer-progress-h: 2px;
   --tabbar-h: 84px;
   --tabbar-pad-b: env(safe-area-inset-bottom, 22px);
-  --scroll-spacer: 150px; /* clears mini-player (64) + tab bar (84) */
+  --player-h: 0px; /* set at runtime: 0 when idle, panel height when playing */
+  --scroll-spacer: calc(var(--tabbar-h) + var(--player-h) + 24px);
 
   /* Desktop (>=1024px) */
   --sidebar-w: 240px;

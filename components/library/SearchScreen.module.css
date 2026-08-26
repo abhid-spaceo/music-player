@@ -1,0 +1,14 @@
+.field { flex: none; padding: 12px var(--gutter) 14px; }
+
+.input {
+  width: 100%;
+  min-height: var(--tap);
+  padding: 0 12px;
+  border: 1px solid var(--outline);
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--bone);
+  font: 400 14.5px var(--sans);
+}
+.input::placeholder { color: var(--dimmer); }
+.input:focus-visible { outline: 2px solid var(--bone); outline-offset: -2px; }

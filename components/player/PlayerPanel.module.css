@@ -1,0 +1,72 @@
+.panel {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: var(--tabbar-h);
+  background: var(--raised);
+  box-shadow: inset 0 1px 0 var(--hairline);
+}
+
+.progress { height: 2px; background: var(--track); cursor: pointer; }
+.fill { display: block; height: 2px; width: var(--pos); background: var(--signal); }
+
+.body {
+  display: flex;
+  gap: var(--row-gap);
+  padding: 12px var(--gutter);
+}
+
+/*
+ * 200x200 is YouTube's documented minimum viewport for an embedded player, and
+ * it must be visible while playing. Not negotiable, and not shrinkable.
+ */
+.embed {
+  flex: none;
+  width: 200px;
+  height: 200px;
+  background: #000;
+  border: 0;
+}
+.embed iframe { display: block; width: 200px; height: 200px; border: 0; }
+
+.meta { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.title { font: var(--t-row-title); color: var(--bone); }
+.channel { margin-top: 2px; font: var(--t-row-artist); color: var(--dim); }
+.times {
+  margin-top: 6px;
+  font: var(--t-meta);
+  letter-spacing: var(--ls-meta);
+  color: var(--dim);
+}
+
+/* Attribution: policy requires a clickable link back to YouTube content on any
+   surface showing YouTube data. */
+.attribution {
+  margin-top: auto;
+  font: var(--t-column-label);
+  letter-spacing: var(--ls-column-label);
+  color: var(--dim);
+}
+
+.controls { display: flex; align-items: center; gap: 2px; margin-top: 8px; }
+.ctl {
+  width: var(--tap);
+  height: var(--tap);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--bone);
+}
+.ctl[data-on='true'] { color: var(--bone); }
+.ctl[data-off='true'] { color: var(--dimmer); }
+
+.error {
+  padding: 10px var(--gutter) 12px;
+  font: var(--t-row-artist);
+  color: var(--dim);
+  box-shadow: inset 0 1px 0 var(--divider);
+}
+
+@media (min-width: 1024px) {
+  .panel { bottom: 0; left: var(--sidebar-w); }
+}

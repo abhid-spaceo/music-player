@@ -614,3 +614,131 @@ behind.
 
 `./scripts/verify-phase2.sh` → **29 passed, 0 failed** after the changes. `npm test` → 64.
 
+---
+
+## Phase 3 + 4 — Shell, player surface, playback and queue · 2026-08-26
+
+**These two phases merged, deliberately.** A player surface cannot be verified as
+"compliant and working" without playback wired to it — an iframe that holds no video
+proves nothing about the 200×200 rule, the visibility rule, or the remount hazard. So
+Phase 3's panel and Phase 4's playback landed together. What is NOT here: playlists,
+favourites, drag reorder, debounced server-side search (Phase 5), and the PWA, link-health
+cron and full accessibility pass (Phase 6).
+
+**Scope steer taken from you mid-phase:** you asked for audio-only, no thumbnails, and
+functionality over screen-and-state coverage. I took the compliant reading — no row
+thumbnails, a compact player panel rather than a video hero, no extraction and no hidden
+iframe — and prioritised working software over the full state matrix.
+
+### 1. File-by-file
+
+| File | Change | Why |
+|---|---|---|
+| `lib/youtube/iframe-api.ts` | new | Loads the IFrame API once (it calls a single global, so concurrent callers must share one promise). Maps all five `onError` codes; 100 is documented as "removed **or** private", so the copy does not pretend to distinguish them. |
+| `components/player/PlayerProvider.tsx` | new | One player instance, queue, index, shuffle, repeat, seek, auto-advance on `ENDED`, error handling that skips a dead entry rather than stalling. |
+| `components/player/PlayerPanel.tsx` | new | The visible surface. 200×200 embed, controls kept on, `WATCH ON YOUTUBE` attribution link, scrubbable progress. Hidden via `display:none` when idle so the **iframe is never destroyed**. |
+| `app/(app)/layout.tsx` | rewritten | Mounts `PlayerProvider` + `AppShell`. Next's docs confirm the guarantee this relies on: *"On navigation, layouts preserve state, remain interactive, and do not rerender."* |
+| `components/library/TrackRow.tsx` | rewritten | **No thumbnail.** 2px amber left bar for the playing row, title/channel stacked, the repurposed 16px column now a `--dim` marker for blocked videos, duration, overflow. Blocked rows are `disabled` with the reason in the accessible name. |
+| `components/library/LibraryScreen.tsx` | rewritten | Fetches `/api/tracks`, chips `RECENT / A–Z / CHANNEL / ISSUES`, PLAY ALL, shuffle-all (Fisher-Yates), loading/error/empty states. |
+| `components/library/QueueScreen.tsx`, `SearchScreen.tsx` | new | Queue with time remaining; search over **my own metadata only** — `search.list` is never called, so the 100-request/day ceiling stays irrelevant. |
+| `app/(app)/{queue,search,playlists}/page.tsx` | new | Real routes. They existed as tab-bar links with no page, so every navigation was a 404 that tore down the layout and killed playback. |
+| `app/sign-in/page.tsx` | new | Email/password, error state, and a hydration guard. |
+| `lib/api/client.ts` | new | `getSession`, `apiGet`, `apiSend` (CSRF header), `useApi(path)`. |
+| `lib/library/types.ts` | new | `Track`, snake→camel mapper, availability labels. |
+| `next.config.ts` | edited | `allowedDevOrigins`, and the CSP split into dev/production variants. |
+| `e2e/playback.spec.ts`, `e2e/queue.spec.ts`, `playwright.config.ts` | new | Real-Chrome browser tests. |
+
+### 2. Five real bugs found by running it, not by reading it
+
+Each of these produced a blank or dead app and none would have been caught by typecheck,
+lint, or the unit tests.
+
+1. **My own CSP stopped the app hydrating.** React's development build uses `eval()` for
+   stack reconstruction, and HMR needs a `ws:` connection. The Phase 1 security-header fix
+   blocked both, so no page was ever interactive. Now dev adds `'unsafe-eval'` and
+   `ws: wss:`; production is verified to contain neither.
+2. **Next 16 blocks cross-origin dev-resource requests by default**, and treats
+   `127.0.0.1` as cross-origin from `localhost` — every JS chunk returned **403** and the
+   page never hydrated. Fixed with `allowedDevOrigins`. This is exactly the class of change
+   `AGENTS.md` warns is not in training data.
+3. **`new YT.Player()` returns an object before its methods exist.** A non-null check is
+   not a readiness check: calling `loadVideoById` too early throws *"is not a function"*
+   and the click is silently lost. Now gated on `onReady`, with the pending track applied
+   when the player becomes usable.
+4. **A click before the API finished loading was dropped with no retry.** The player is
+   created asynchronously, so the first tap frequently lands before it exists. Pending
+   track is now remembered and started in `onReady`.
+5. **The sign-in form submitted natively before hydration**, performing a GET that
+   navigated away and put the typed credentials in the URL bar. The submit button is now
+   disabled until hydrated, via `useSyncExternalStore` (no cascading render).
+
+### 3. Decisions not specified
+
+| Decision | Alternative rejected |
+|---|---|
+| No thumbnail in the row at all | A ≥120×70 thumbnail — policy-legal but it forces the row from 56px to ~78px and halves the visible density. Your "no thumbnail is fine" settled it, and it also removes the broken-image problem for removed videos. |
+| Player panel `display:none` when idle, never unmounted | Conditional render — one line shorter, and it destroys the iframe, which is the exact failure mode we are guarding against. |
+| `youtube-nocookie.com` for every video | Standard host, switching only for Made For Kids. Switching hosts means re-creating the player; nocookie satisfies the tracking requirement universally at no cost. |
+| A dead entry auto-skips after 1.2s | Stopping on it — a library of links accumulates rot, and stalling on one is worse than moving past it. Only skips when there is somewhere to go. |
+| `data-youtube-id` on rows | Nothing. Titles come from YouTube and a refresh rewrites them, so a title is not a stable test or debugging handle. |
+| Chips are `RECENT / A–Z / CHANNEL / ISSUES` | The canvas's `ARTIST / OFFLINE` — there is no offline here, and a video has a channel. ISSUES surfaces link rot. |
+| Attribution as a text `WATCH ON YOUTUBE` link | The red YouTube wordmark. **The stricter reading of the branding guidelines wants the logo**, and it collides with "amber is the only colour". Flagged as owed. |
+
+### 4. Verification — real output
+
+```
+npx tsc --noEmit                 0
+npx eslint .                     0
+npm test                         64 passed, 0 failed
+./scripts/verify-phase1.sh       38 passed, 0 failed
+./scripts/verify-phase2.sh       29 passed, 0 failed
+npx playwright test              2 passed
+```
+
+Browser test output, real Chrome at 390×844:
+
+```
+library rows: 5
+chose video id: dQw4w9WgXcQ
+embed box: 200x200                        <- policy minimum, measured
+fraction of player visible: 100%          <- >50% required before auto-advance
+position after start: 2s                  <- real playback
+same iframe node after navigation: true   <- the node was NOT remounted
+position after navigating: 5s             <- audio continued across the route change
+
+queue order: 9bZkp7q19f0, dQw4w9WgXcQ, JGwWNGJdvx8, jNQXAC9IVRw, kJQP7kiw5Fk
+started on: jNQXAC9IVRw
+auto-advanced to: kJQP7kiw5Fk             <- programmatic advance on ENDED, no gesture
+```
+
+Production build headers, from `next start`:
+
+```
+Strict-Transport-Security: max-age=63072000; includeSubDomains
+Content-Security-Policy: default-src 'self'; frame-ancestors 'none'; frame-src …
+OK: no unsafe-eval in production CSP
+```
+
+### 5. Could not verify
+
+1. **A real Android device.** The brief requires it, and I have no device. Auto-advance is
+   verified in desktop Chrome, which is *not* the same gesture regime. **This is the one
+   verification I cannot substitute for.**
+2. **Live YouTube metadata** — still the stub. Playback itself is real (real video IDs,
+   real 19s duration detected from the API), only metadata ingestion is stubbed.
+3. **Neon and Vercel** — still local Postgres, still not deployed.
+4. Two console 404s during the browser run, not yet identified; nothing visibly broken.
+
+### 6. Owed, and not silently dropped
+
+- **YouTube branding mark** (policy) — text link only right now; the logo reading conflicts
+  with the single-accent rule and needs a design decision.
+- **Disclosure label** next to `sortArtist`/`note` — required when they are displayed
+  alongside YouTube data. They are not displayed yet, so nothing is out of compliance; the
+  disclosure ships with them in Phase 5.
+- **The 30-day refresh obligation** — the cron is Phase 6, so the app is out of compliance
+  by design until then.
+- **Desktop 1280px** — sidebar and player bar have CSS but are unverified at that width.
+- **The state matrix** — loading/error/empty exist for the library; offline, quota-exceeded
+  and per-screen states are not built.
+

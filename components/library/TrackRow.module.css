@@ -1,0 +1,66 @@
+.row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--row-gap);
+  height: var(--row-h);
+  padding: 0 8px 0 var(--gutter);
+  box-shadow: inset 0 -1px 0 var(--divider);
+}
+
+/* The playing marker: one 2px amber bar at the left edge. */
+.row[data-playing='true']::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--signal);
+}
+
+.playHit { position: absolute; inset: 0; z-index: 0; }
+
+.text { position: relative; z-index: 1; flex: 1; min-width: 0; pointer-events: none; }
+.title { font: var(--t-row-title); color: var(--bone); }
+.row[data-playing='true'] .title { color: var(--signal); }
+.channel { margin-top: 2px; font: var(--t-row-artist); color: var(--dim); }
+
+/* Repurposed from the canvas's download column: a marker for a video whose
+   playback is blocked. --dim, never amber. */
+.status {
+  position: relative;
+  z-index: 1;
+  flex: none;
+  width: var(--dl-col);
+  display: flex;
+  justify-content: center;
+  color: var(--dim);
+  pointer-events: none;
+}
+
+.time {
+  position: relative;
+  z-index: 1;
+  flex: none;
+  width: var(--time-col);
+  text-align: right;
+  font: var(--t-duration);
+  color: var(--dim);
+  pointer-events: none;
+}
+.row[data-playing='true'] .time { color: var(--signal); }
+.row[data-blocked='true'] .title,
+.row[data-blocked='true'] .time { color: var(--dimmer); }
+
+.overflow {
+  position: relative;
+  z-index: 1;
+  flex: none;
+  width: var(--overflow-col);
+  height: var(--overflow-col);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--dim);
+}

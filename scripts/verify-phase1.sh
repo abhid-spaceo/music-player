@@ -181,9 +181,24 @@ case "$OUT" in *"0 applied"*) expect "re-running migrate applies nothing" yes ye
 
 hr "18. Security headers are present"
 H=$(curl -s -D - -o /dev/null "$BASE/api/session")
-for want in "strict-transport-security" "content-security-policy" "x-content-type-options" "referrer-policy"; do
+for want in "content-security-policy" "x-content-type-options" "referrer-policy" "x-frame-options"; do
   echo "$H" | grep -qi "^$want:" && expect "header $want" yes yes || expect "header $want" yes no
 done
+# HSTS is deliberately production-only: sending it over plain-HTTP localhost
+# would pin localhost to https in the browser permanently. Assert the intended
+# behaviour for whichever environment is under test.
+if [ "${PROD:-0}" = "1" ]; then
+  echo "$H" | grep -qi "^strict-transport-security:" \
+    && expect "HSTS present (production)" yes yes || expect "HSTS present (production)" yes no
+else
+  echo "$H" | grep -qi "^strict-transport-security:" \
+    && expect "HSTS correctly absent in dev" yes no || expect "HSTS correctly absent in dev" yes yes
+fi
+# CSP must not carry the dev-only relaxations once built for production.
+if [ "${PROD:-0}" = "1" ]; then
+  echo "$H" | grep -qi "unsafe-eval" \
+    && expect "production CSP has no unsafe-eval" yes no || expect "production CSP has no unsafe-eval" yes yes
+fi
 echo "$H" | grep -qi "^cache-control: private, no-store" && expect "authenticated JSON is no-store" yes yes || expect "authenticated JSON is no-store" yes no
 
 hr "19. Cleanup — the suite leaves no rows behind"
