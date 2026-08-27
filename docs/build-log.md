@@ -838,7 +838,97 @@ This will recur; it is an environment issue, not a code one.
   labelled controls and `aria-current`/`role=progressbar` are in place, but the audit itself
   has not been run.
 - **Desktop 1280px** styled but unverified.
-- **No admin UI for adding tracks** — the API works and the README documents it.
+- ~~No admin UI for adding tracks~~ — **built 2026-08-27**, see below.
+
+---
+
+## Admin panel + audio-only player · 2026-08-27
+
+| Change | Detail |
+|---|---|
+| **`/admin` screen, two tabs** | ADD LINKS (paste box, per-link outcome, quota spend) and TRACKS (search, inline sort-artist/note edit, delete, on-demand dead-link check). No new endpoint: every button drives a route that already existed and was already verified. |
+| **Role-gated navigation** | `DESTINATIONS` gained an `adminOnly` flag and a `visibleDestinations(role)` filter, shared by `TabBar` (mobile) and `Sidebar` (desktop). `AppShell` keeps the role from the session call it already made. The server still enforces the role — the filter is chrome, so a wrong answer there is cosmetic, never a hole. |
+| **Playlist import** | `parsePlaylistId` is deliberately separate from `parseYouTubeUrl`, so `watch?v=X&list=Y` still adds only video X — otherwise any link copied from inside a playlist would import hundreds of songs. `fetchPlaylistVideoIds` pages `playlistItems.list` 50 at a time, skips deleted/private entries, caps at 500 and reports truncation. Mixes (`list=RD…`) are refused by name because the Data API will not serve them. Verified against a real 269-video playlist: 254 added, 8 skipped, 12 quota units, 5.8s. |
+| **Audio-only player** | The 200×200 embed is now `position: fixed; opacity: 0.001; pointer-events: none` instead of visible in the player bar. It keeps its real size and stays laid out — `display: none` or a zero-sized player gets throttled or refused by the browser's media stack. The `WATCH ON YOUTUBE` attribution link stays. The reserved player height dropped 226 → 207 (measured, tallest case is 360px wide). |
+
+### Player bar redesign · 2026-08-27
+
+Reworked to a single row on desktop, from a supplied mockup.
+
+| Part | Note |
+|---|---|
+| **Artwork** | `thumbnail_url` was already selected by `GET /api/tracks` but neither typed nor mapped. Added to `ApiTrackRow`, `Track` and `toTrack` — three lines, no API change. Shown unaltered, as YouTube's terms require. |
+| **Favourite in the bar** | Reuses `FavouriteButton`, keyed by track id. Without the key it keeps its own optimistic state and would show the previous song's heart after an auto-advance. |
+| **Transport on the centre line** | The desktop body is a `minmax(0,1fr) auto minmax(0,1fr)` grid, not a flex row: equal side columns keep the controls centred no matter how long the title is. |
+| **Scrubber** | A read-only echo of the seek line. Seeking stays on the full-width bar at the top of the panel — a much larger target than a 90px strip, which matters most on a phone. |
+| **Volume** | Added on request, after the rest. `PlayerApi` gained `volume`/`muted`/`setVolume`/`toggleMute`; `YTPlayer` gained the five volume methods. The player owns the real value — React only mirrors it — and `onReady` re-applies the level, because a level chosen before the iframe existed would otherwise be lost. Setting a level above zero unmutes (a slider that moves while silent is a lie) and unmuting at zero jumps to 50 rather than staying silent. Verified: 30 → mute → unmute returns to 30, and the level survives navigation. |
+| **Phone** | Same parts, stacked. A 390px row cannot hold artwork, identity, five controls, a scrubber and a link without pushing every target under 44px. |
+
+**Two stacking bugs fixed on the way, both pre-existing:**
+
+1. **Song titles painted straight through the player bar.** `TrackRow` sets `z-index: 1` on its
+   text and time, but `.row` is `position: relative` with `z-index: auto` — which creates no
+   stacking context, so that `1` competed in the *root* context against the panel's implicit
+   `0` and won. `.panel` and `.bar` now carry `z-index: 2`.
+2. **The fifth tab was clipped.** `TabBar` hardcoded `grid-template-columns: repeat(4, 1fr)`,
+   so the admin-only tab wrapped to a second row and was cut off by the bar's fixed height.
+   Now `grid-auto-flow: column`, which fits however many destinations there are. Verified at
+   360px: five tabs, one row, no page overflow.
+
+**The video flashed on screen on a cold load.** Reported from a real first visit: the whole
+player rendered unstyled for a few frames, and a class-only `.embed` rule meant the iframe
+appeared at YouTube's default size in the middle of the bar until the stylesheet arrived. The
+hiding now lives in **inline styles on a wrapper element**, which are in the DOM from the
+first frame and cannot be late. It is a wrapper, not the host itself, because
+`new YT.Player()` *replaces* the node it is handed — anything set on the host survives only at
+the API's discretion. This is the same shape deluxsalon.in uses. Verified by aborting every
+stylesheet request and stripping injected `<style>` tags with a MutationObserver: across 40
+samples the video was visible in **zero frames**.
+
+**Responsive cost of centring the transport.** Equal side columns mean the right-hand group
+only ever gets half the leftover width — measured, it wants 416px and is handed 363px at 1280
+and 235px at 1024. Rather than let it clip, pieces drop by width: the scrubber and volume
+slider disappear below 1280 (the seek line along the top still shows progress), and the link
+reads `YOUTUBE ↗` until 1460px, where `WATCH ON YOUTUBE ↗` fits. The volume slider is also
+hidden below 600px — a phone has hardware volume keys, and the one row cannot hold times,
+scrubber, mute, slider and the link at 360px. **The mute button and the attribution link are
+present at every width from 320 to 1920, verified with zero clipping and zero page overflow.**
+
+**Still open:** `--scroll-spacer` in `tokens.css:50` is declared on `:root` using
+`var(--player-h)`, so it substitutes root's `0px`. `AppShell` sets the real height on a
+descendant, which cannot reach back up. The runtime player height has therefore never fed the
+list's bottom spacer. Left alone — flagged, not fixed.
+
+### Owner decisions recorded
+
+- **One user, so no "public station" playlist.** Every playlist already belongs to the only
+  account; an `is_public` column would add a migration and buy nothing.
+- **No users tab.** `npm run seed` / `npm run set-password` cover it.
+- **Video hidden despite the earlier "must be visible while playing" note** in
+  `PlayerPanel.module.css`. Raised once, decided by the owner, attribution kept.
+
+### Known limits, not defects
+
+- **Clearing a note or sort-artist is not supported.** `PATCH` updates with
+  `COALESCE($2, sort_artist)`, which ignores null, so a blank would silently keep the old
+  text. The UI says so rather than faking a successful save. A one-line route change would
+  fix it; deliberately out of scope.
+- **The admin table shows 100 tracks.** That is the hard maximum on `GET /api/tracks`.
+  Search is the way through a larger library until the table gets paging.
+
+### Cost of the QA pass, honestly
+
+Running `verify-phase2.sh` against the working dev database added 161 throwaway tracks, and
+an admin test pressed the dead-link check while the server was still pointed at the metadata
+stub — which overwrote the five seeded titles with `Stub title for …`. Both were recovered
+(`TRUNCATE tracks, playlists CASCADE` + `npm run seed` + a refresh against the live API).
+**The verify scripts write to whatever database they are pointed at; they are not read-only.**
+
+The cause of the stub overwrite is worth remembering: `local.sh` exports `YOUTUBE_API_BASE`
+into the dev server's environment when no API key is present, and a process environment
+variable beats `.env.local`. Adding a key therefore needs a **full restart**, not a reload —
+and the "LIVE api key found" banner reads the file, so it can be right about the file and
+wrong about the running process.
 ---
 
 ## Local review fixes · 2026-08-27

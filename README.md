@@ -100,8 +100,26 @@ day at an unpredictable hour (±59 min)**, and a more frequent schedule fails at
 
 ## Adding tracks
 
-There is no UI for bulk adding yet. Use the API — it accepts every YouTube URL form, and
-one call covers up to 50 videos:
+Sign in as the admin and open **ADMIN -> ADD LINKS**. Paste as many YouTube links as you
+like, one per line or comma separated. Each comes back marked `ADDED`, `DUPLICATE`,
+`INVALID` (with the reason) or `NOT FOUND`, together with the YouTube quota the batch cost.
+
+**Playlists.** Paste a playlist link (`youtube.com/playlist?list=PL...`) and every video in
+it is imported — up to 500 per import, deleted and private entries skipped and counted.
+A 269-video playlist costs 12 quota units of the daily 10,000.
+
+Two deliberate limits:
+
+- `watch?v=X&list=Y` adds **only video X**. Anyone copying a link from inside a playlist
+  would otherwise import hundreds of songs by accident.
+- YouTube **Mixes** (`list=RD...`) cannot be imported. They are generated per viewer and the
+  Data API will not serve them; the app says so rather than failing opaquely.
+
+**ADMIN -> TRACKS** lists everything with search, inline editing of sort-artist and note,
+delete, and an on-demand dead-link check.
+
+The same thing scripted, for bulk imports from a file — it accepts every YouTube URL form,
+and one call covers up to 50 videos:
 
 ```bash
 # Get a CSRF token and a session cookie
