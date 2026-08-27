@@ -7,22 +7,34 @@ import {
   LibraryIcon,
   PlaylistsIcon,
   SearchIcon,
+  AdminIcon,
 } from '@/components/primitives/Icons';
 import styles from './TabBar.module.css';
 
+export type Role = 'admin' | 'listener';
+
 export const DESTINATIONS = [
-  { href: '/library', label: 'LIBRARY', Icon: LibraryIcon },
-  { href: '/search', label: 'SEARCH', Icon: SearchIcon },
-  { href: '/playlists', label: 'PLAYLISTS', Icon: PlaylistsIcon },
-  { href: '/queue', label: 'QUEUE', Icon: QueueIcon },
+  { href: '/library', label: 'LIBRARY', Icon: LibraryIcon, adminOnly: false },
+  { href: '/search', label: 'SEARCH', Icon: SearchIcon, adminOnly: false },
+  { href: '/playlists', label: 'PLAYLISTS', Icon: PlaylistsIcon, adminOnly: false },
+  { href: '/queue', label: 'QUEUE', Icon: QueueIcon, adminOnly: false },
+  { href: '/admin', label: 'ADMIN', Icon: AdminIcon, adminOnly: true },
 ] as const;
 
-export function TabBar() {
+/**
+ * Hides admin-only entries. The server enforces the role on every admin route;
+ * this is chrome, so a wrong answer here is a cosmetic bug, never a hole.
+ */
+export function visibleDestinations(role: Role | null) {
+  return DESTINATIONS.filter((d) => !d.adminOnly || role === 'admin');
+}
+
+export function TabBar({ role }: { role: Role | null }) {
   const pathname = usePathname();
 
   return (
     <nav className={styles.bar} aria-label="Primary">
-      {DESTINATIONS.map(({ href, label, Icon }) => {
+      {visibleDestinations(role).map(({ href, label, Icon }) => {
         const current = pathname === href || pathname.startsWith(`${href}/`);
         return (
           <Link

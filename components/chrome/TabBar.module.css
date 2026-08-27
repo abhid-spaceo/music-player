@@ -1,5 +1,8 @@
 .bar {
   position: absolute;
+  /* Same reason as the player panel: TrackRow's z-index:1 text would
+     otherwise paint over this bar. */
+  z-index: 2;
   left: 0;
   right: 0;
   bottom: 0;
@@ -11,7 +14,13 @@
   background: var(--base);
   box-shadow: inset 0 1px 0 var(--hairline);
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  /*
+   * One equal column per destination, however many there are. It was
+   * `repeat(4, 1fr)`, so the admin-only fifth tab wrapped to a second row and
+   * was clipped by the bar's fixed height.
+   */
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
   align-items: start;
 }
 
@@ -29,7 +38,15 @@
 
 .tab[aria-current='page'] { color: var(--bone); }
 
-.label { font: var(--t-tab); letter-spacing: var(--ls-tab); }
+.label {
+  font: var(--t-tab);
+  letter-spacing: var(--ls-tab);
+  /* Five columns at 360px leaves ~68px each; PLAYLISTS is the longest label. */
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 
 /* Replaced by the sidebar at desktop widths. */
 @media (min-width: 1024px) {

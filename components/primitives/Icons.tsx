@@ -79,3 +79,11 @@ export const PauseIcon = ({ size = 20, color = 'currentColor' }: S & { color?: s
     <rect x="14" y="4" width="4" height="16" rx="1" />
   </svg>
 );
+
+export const AdminIcon = ({ size = 21 }: S) => (
+  <svg {...stroke} width={size} height={size} strokeWidth={1.7} aria-hidden="true">
+    <path d="M12 3l7 3.5v5c0 4.2-2.8 7.6-7 9.5-4.2-1.9-7-5.3-7-9.5v-5z" />
+    <path d="M12 9v5" />
+    <path d="M9.5 11.5h5" />
+  </svg>
+);

@@ -2,15 +2,15 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { DESTINATIONS } from './TabBar';
+import { visibleDestinations, type Role } from './TabBar';
 import styles from './Sidebar.module.css';
 
-export function Sidebar() {
+export function Sidebar({ role }: { role: Role | null }) {
   const pathname = usePathname();
 
   return (
     <nav className={styles.sidebar} aria-label="Primary">
-      {DESTINATIONS.map(({ href, label, Icon }) => {
+      {visibleDestinations(role).map(({ href, label, Icon }) => {
         const current = pathname === href || pathname.startsWith(`${href}/`);
         return (
           <Link

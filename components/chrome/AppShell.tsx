@@ -20,6 +20,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const { current } = usePlayer();
   const [checked, setChecked] = useState(false);
+  const [role, setRole] = useState<'admin' | 'listener' | null>(null);
 
   // One session check per shell mount. This is also the call that revalidates
   // the cookie against the database, so a revoked session lands here.
@@ -29,7 +30,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       .then((s) => {
         if (cancelled) return;
         if (!s.user) router.replace('/sign-in');
-        else setChecked(true);
+        else {
+          setRole(s.user.role);
+          setChecked(true);
+        }
       })
       .catch(() => {
         if (!cancelled) router.replace('/sign-in');
@@ -40,18 +44,20 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }, [router]);
 
   // The list's bottom spacer has to clear the panel, and the panel is only
-  // there when something is queued.
-  const playerHeight = current ? 226 : 0;
+  // there when something is queued. 207 is the measured tallest case (360px
+  // wide, where the meta column wraps most); it was 226 while the 200px video
+  // was in flow. Over-reserving on wider screens only adds blank scroll space.
+  const playerHeight = current ? 207 : 0;
 
   return (
     <div
       className={styles.shell}
       style={{ '--player-h': `${playerHeight}px` } as React.CSSProperties}
     >
-      <Sidebar />
+      <Sidebar role={role} />
       <div className={styles.main}>{checked ? children : null}</div>
       <PlayerPanel />
-      <TabBar />
+      <TabBar role={role} />
       <KeyboardShortcuts />
       <ServiceWorkerRegistrar />
     </div>
