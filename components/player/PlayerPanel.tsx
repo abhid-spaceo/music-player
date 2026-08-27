@@ -51,10 +51,11 @@ export function PlayerPanel() {
         <div className={styles.embed} ref={registerHost} />
 
         <div className={styles.meta}>
-          <div className={`${styles.title} truncate`}>{current?.title ?? ''}</div>
-          <div className={`${styles.channel} truncate`}>{current?.channelTitle ?? ''}</div>
-          <div className={`${styles.times} tnum`}>
-            {formatDuration(position)} / {formatDuration(total)}
+          {/* Three zones on desktop: identity, transport, aside. Wrapped so the
+              grid places blocks, not overlapping individual lines. */}
+          <div className={styles.identity}>
+            <div className={`${styles.title} truncate`}>{current?.title ?? ''}</div>
+            <div className={`${styles.channel} truncate`}>{current?.channelTitle ?? ''}</div>
           </div>
 
           <div className={styles.controls}>
@@ -100,16 +101,21 @@ export function PlayerPanel() {
             </button>
           </div>
 
-          {current ? (
-            <a
-              className={styles.attribution}
-              href={`https://www.youtube.com/watch?v=${current.youtubeId}`}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              WATCH ON YOUTUBE
-            </a>
-          ) : null}
+          <div className={styles.aside}>
+            <div className={`${styles.times} tnum`}>
+              {formatDuration(position)} / {formatDuration(total)}
+            </div>
+            {current ? (
+              <a
+                className={styles.attribution}
+                href={`https://www.youtube.com/watch?v=${current.youtubeId}`}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                WATCH ON YOUTUBE
+              </a>
+            ) : null}
+          </div>
         </div>
       </div>
 

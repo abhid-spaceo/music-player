@@ -3,6 +3,20 @@
 # brief asks for it, the real Set-Cookie header. No check is softened to pass.
 set -uo pipefail
 
+# Credentials come from .env.local so changing a password in one place does not
+# silently break this suite. Shell env still wins if it is already set.
+if [ -f .env.local ]; then
+  while IFS='=' read -r key value; do
+    case "$key" in
+      SEED_ADMIN_EMAIL|SEED_ADMIN_PASSWORD|SEED_LISTENER_EMAIL|SEED_LISTENER_PASSWORD)
+        value="${value%\"}"; value="${value#\"}"
+        eval "current=\${$key:-}"
+        [ -n "$current" ] || export "$key=$value"
+        ;;
+    esac
+  done < .env.local
+fi
+
 BASE="${BASE:-http://127.0.0.1:3100}"
 ADMIN_EMAIL="${SEED_ADMIN_EMAIL:-admin@example.com}"
 ADMIN_PW="${SEED_ADMIN_PASSWORD:-admin-password-1234}"

@@ -17,6 +17,7 @@ export type Track = {
   note: string | null;
   availability: Availability;
   liveBroadcastContent: string | null;
+  isFavourite: boolean;
 };
 
 export type ApiTrackRow = {
@@ -29,6 +30,8 @@ export type ApiTrackRow = {
   note: string | null;
   availability: Availability;
   live_broadcast_content: string | null;
+  is_favourite?: boolean;
+  position?: number;
 };
 
 export function toTrack(row: ApiTrackRow): Track {
@@ -42,6 +45,7 @@ export function toTrack(row: ApiTrackRow): Track {
     note: row.note,
     availability: row.availability,
     liveBroadcastContent: row.live_broadcast_content,
+    isFavourite: row.is_favourite ?? false,
   };
 }
 

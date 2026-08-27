@@ -1,6 +1,6 @@
 'use client';
 
-import { OverflowButton } from '@/components/primitives/OverflowButton';
+import { FavouriteButton } from '@/components/primitives/FavouriteButton';
 import { formatDuration } from '@/lib/format';
 import { AVAILABILITY_LABEL, isPlayable, type Track } from '@/lib/library/types';
 import styles from './TrackRow.module.css';
@@ -61,7 +61,12 @@ export function TrackRow({ track, playing, onPlay }: Props) {
 
       <span className={`${styles.time} tnum`}>{formatDuration(track.durationSec)}</span>
 
-      <OverflowButton className={styles.overflow} label={`More options for ${track.title}`} />
+      <FavouriteButton
+        className={styles.overflow}
+        trackId={track.id}
+        initial={track.isFavourite}
+        title={track.title}
+      />
     </li>
   );
 }

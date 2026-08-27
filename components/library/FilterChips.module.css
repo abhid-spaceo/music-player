@@ -1,4 +1,17 @@
-.chips { display: flex; gap: 6px; flex: none; }
+.chips {
+  display: flex;
+  gap: 6px;
+  flex: none;
+  /* Five chips exceed 390px. Scroll them rather than clip the last one, which
+     the shell's overflow:hidden made silently unreachable. */
+  overflow-x: auto;
+  scrollbar-width: none;
+  /* Let the active chip's edge sit on the gutter when scrolled. */
+  padding-right: var(--gutter);
+  margin-right: calc(-1 * var(--gutter));
+  scroll-padding-left: var(--gutter);
+}
+.chips::-webkit-scrollbar { display: none; }
 
 .chip {
   min-height: var(--tap);

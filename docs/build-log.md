@@ -742,3 +742,129 @@ OK: no unsafe-eval in production CSP
 - **The state matrix** — loading/error/empty exist for the library; offline, quota-exceeded
   and per-screen states are not built.
 
+---
+
+## Phase 5 + 6 — Organisation, PWA, hardening · 2026-08-26
+
+Deadline steer taken: "up and running tomorrow morning". So the effort went to the
+organisation layer (the product's stated value), deployability, and a provisioning runbook —
+not to polish.
+
+### 1. File-by-file
+
+| File | Change |
+|---|---|
+| `db/migrations/004_search_and_playlists.sql` | `pg_trgm` + GIN indexes on title/channel/sort_artist. A btree on `lower(col)` only serves prefix matches, so `%foo%` could never use the Phase 1 indexes. Verified: with `enable_seqscan=off`, `ILIKE '%zoo%'` uses a Bitmap Heap Scan on `tracks_title_trgm_idx`. Also a trigger for `playlists.updated_at`, which had no writer and would have equalled `created_at` forever. |
+| `app/api/playlists/**` | List/create/read/update/delete, add/remove tracks, and `PUT .../order`. Ownership is enforced in the `WHERE` clause, so someone else's playlist is indistinguishable from one that does not exist. |
+| `app/api/favourites/**` | List, and idempotent PUT/DELETE per track. |
+| `app/api/tracks/route.ts` | `?q=` substring search and `?scope=favourites`, plus `is_favourite` on every row. Aggregates now only run on an unfiltered first page. |
+| `components/library/PlaylistsScreen.tsx`, `PlaylistDetailScreen.tsx` | List + create + delete; detail with add-by-search, remove, and reorder. |
+| `components/primitives/FavouriteButton.tsx` | The row's 44px trailing control, optimistic with rollback. |
+| `lib/api/use-debounced-search.ts` | 250ms debounce + `AbortController`. An abort is the expected outcome of a superseded request, so it is never surfaced as an error. |
+| `public/manifest.webmanifest`, `public/sw.js`, `scripts/make-icons.mjs` | PWA. Icons are real PNGs written with Node's `zlib` — no image dependency. |
+| `components/chrome/ServiceWorkerRegistrar.tsx` | Registers the SW and holds a waiting update back until nothing is playing. |
+| `components/player/KeyboardShortcuts.tsx` | Space / arrows / n / p, suppressed while typing. |
+| `app/api/cron/link-health/route.ts`, `vercel.json` | The daily sweep, `CRON_SECRET`-guarded, bounded to 40 batches so one run cannot exceed Hobby's 300s ceiling. |
+| `app/error.tsx`, `app/(app)/error.tsx` | Error boundaries that never show a stack trace. |
+| `README.md` | The provisioning runbook. |
+| `e2e/organisation.spec.ts` | Playlist create/add/reorder/persist, favourites, search cancellation. |
+
+### 2. The Service Worker's one important decision
+
+It **never touches media, and never touches a cross-origin request.** youtube.com,
+youtube-nocookie.com and i.ytimg.com pass straight through, uncached. Two independent
+reasons: caching YouTube media breaks the API policies, and a fetch handler that replays
+audio from a cache returns 200 where the browser asked for a 206 range — which Safari fails
+hard on. The safest handler is the one that does not exist. It caches the app shell, hashed
+build output, and `/api/tracks|playlists|favourites`; it explicitly skips `/api/auth/*` and
+`/api/session` so a stale session can never be served from a cache. `skipWaiting` is never
+automatic — a new worker takes over on the next load, so an update cannot kill playing audio.
+
+### 3. Two real bugs the tests found
+
+1. **Rapid reorder silently lost moves.** Two quick "move up" clicks both read `tracks` from
+   the same stale render, so the second computed from the pre-first-click array and one move
+   never reached the server. The UI showed the right order; a reload revealed the truth.
+   Fixed with a synchronously-updated `orderRef` plus a serialised write chain, so a slow
+   earlier PUT cannot land after a faster later one. **Caught only because the test reloads
+   and re-asserts** — optimistic UI made it invisible otherwise.
+2. **The add-track button's only label was `+`.** Ambiguous to a test locator and useless to
+   a screen reader. Now `Add {title} to this playlist`.
+
+### 4. Verification — real output
+
+```
+tsc --noEmit                 0
+eslint .                     0
+npm test                     64 passed, 0 failed
+next build                   ok (21 routes)
+verify-phase1.sh             38 passed, 0 failed
+verify-phase2.sh             29 passed, 0 failed
+playwright test              5 passed
+```
+
+Browser results:
+
+```
+playlist  order before: Me at the zoo | Never Gonna Give You Up | Gangnam Style
+          order after:  Gangnam Style | Me at the zoo | Never Gonna Give You Up
+          after reload: Gangnam Style | Me at the zoo | Never Gonna Give You Up   <- persisted
+favourites  favouriting: Add Shape of You to favourites -> listed under FAVES after reload
+search      keystrokes: 7, search requests issued: 1     <- debounce + abort
+playback    embed 200x200, 100% visible, same iframe node after navigation, audio continued
+queue       auto-advanced jNQXAC9IVRw -> kJQP7kiw5Fk on ENDED, no gesture
+```
+
+Cron endpoint, live: `{"checked":5,"stillFine":5,"nowBlocked":[],"wentMissing":[]}` at
+**1 API call / 1 quota unit** for the whole library.
+
+PWA assets all served: manifest `application/manifest+json`, `sw.js`, three PNG icons.
+
+### 5. Environment note
+
+The build failed once with `ENOSPC: no space left on device` — the machine was at **99%
+disk, 1.0 GB free**. Cleared `.next` and the npm cache (both regenerate) to get back to
+2.3 GB. **Left `~/Library/Caches/ms-playwright` (1.5 GB) alone** since other projects use it.
+This will recur; it is an environment issue, not a code one.
+
+### 6. Still not done
+
+- **No real Android device test.** The one verification I cannot substitute for.
+- **No live YouTube API call.** Metadata is stubbed; playback is real.
+- **Not deployed.** Needs your Vercel and Neon accounts.
+- **YouTube branding mark** is a text link, not the logo — unresolved conflict with the
+  single-accent rule.
+- **No Lighthouse PWA audit run**, and no axe pass. Error boundaries, keyboard shortcuts,
+  labelled controls and `aria-current`/`role=progressbar` are in place, but the audit itself
+  has not been run.
+- **Desktop 1280px** styled but unverified.
+- **No admin UI for adding tracks** — the API works and the README documents it.
+---
+
+## Local review fixes · 2026-08-27
+
+Found by looking at the running app, not by testing it.
+
+| Fix | Detail |
+|---|---|
+| **The `ISSUES` filter chip was clipped and unreachable.** | Five chips exceed 390px, and the shell's `overflow: hidden` meant it never registered as page overflow — every test passed while the control was simply gone. The chip row now scrolls horizontally. `scrollWidth` is 360 at 360px and 390 at 390px: no page overflow either way. |
+| **Playlist titles were squeezed to "Never Gonna Giv…".** | Four controls per row (grip, up, down, delete) plus the duration left ~120px for the title. The drag grip is now desktop-only — HTML5 drag does not work on touch, so on a phone it promised an interaction that was not there *and* stole the width. Arrow buttons are what work everywhere, including with a keyboard. Move/delete tightened to 30/34px. |
+| **The status column header was a bare `!`.** | Now blank, with an `sr-only` label. The column is empty unless a video is blocked, so a permanent visible label is noise; the meaning is carried by each row's accessible name. |
+| **Desktop 1280 wasted the width right of the transport controls.** | The meta column stretched full width. Now three real blocks — identity left, transport centred, times and attribution right — wrapped properly rather than forced with `align-self` into one grid area, which would have overlapped the title and channel. |
+| **Seeded titles had been overwritten with stub metadata.** | Re-seeded, so the library reads *Never Gonna Give You Up · Rick Astley* rather than *Stub title for dQw4w9WgXcQ*. |
+| **Browser tests raced each other.** | The suite ran files in parallel against one dev server and one database while adding tracks, creating playlists and toggling favourites. `workers: 1, fullyParallel: false` — these are integration tests over shared state, so parallelism was simply wrong. It showed up as a failure that passed in isolation. |
+| **Two console 404s** | Were the missing favicon. `console errors: 0` now. |
+
+### Verification after the fixes
+
+```
+tsc --noEmit         0
+eslint .             0
+npm test             64 passed, 0 failed
+next build           ok
+verify-phase1.sh     38 passed, 0 failed
+verify-phase2.sh     29 passed, 0 failed
+playwright test      5 passed, console errors: 0
+```
+
+Screenshots re-captured in `docs/screens/` (11 files, 360 / 390 / 1280).

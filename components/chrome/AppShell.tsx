@@ -3,7 +3,9 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { getSession } from '@/lib/api/client';
+import { KeyboardShortcuts } from '@/components/player/KeyboardShortcuts';
 import { PlayerPanel } from '@/components/player/PlayerPanel';
+import { ServiceWorkerRegistrar } from './ServiceWorkerRegistrar';
 import { usePlayer } from '@/components/player/PlayerProvider';
 import { Sidebar } from './Sidebar';
 import { TabBar } from './TabBar';
@@ -50,6 +52,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <div className={styles.main}>{checked ? children : null}</div>
       <PlayerPanel />
       <TabBar />
+      <KeyboardShortcuts />
+      <ServiceWorkerRegistrar />
     </div>
   );
 }

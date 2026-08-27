@@ -27,7 +27,13 @@ export function LibraryScreen() {
   const { current, playQueue } = usePlayer();
   const [filter, setFilter] = useState<Filter>('RECENT');
 
-  const { data, meta: listMeta, error, loading } = useApi<ApiTrackRow[]>('/api/tracks?limit=100');
+  // FAVES is a server-side scope, not an in-memory filter: favourites live in
+  // their own table and the row already reports is_favourite.
+  const path =
+    filter === 'FAVES'
+      ? '/api/tracks?limit=100&scope=favourites'
+      : '/api/tracks?limit=100';
+  const { data, meta: listMeta, error, loading } = useApi<ApiTrackRow[]>(path);
 
   const tracks: Track[] = useMemo(() => (data ?? []).map(toTrack), [data]);
   const unavailable = Number(listMeta?.unavailable ?? 0);
@@ -43,6 +49,8 @@ export function LibraryScreen() {
         );
       case 'ISSUES':
         return list.filter((t) => !isPlayable(t));
+      case 'FAVES':
+        return list;
       default:
         return list;
     }
@@ -104,7 +112,9 @@ export function LibraryScreen() {
           <li className={styles.state}>
             {filter === 'ISSUES'
               ? 'Nothing is broken. Every track plays.'
-              : 'No tracks yet. An admin adds them by pasting YouTube links.'}
+              : filter === 'FAVES'
+                ? 'No favourites yet. Tap the heart on any row.'
+                : 'No tracks yet. An admin adds them by pasting YouTube links.'}
           </li>
         ) : (
           visible.map((t) => (

@@ -1,0 +1,10 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "crons": [
+    {
+      "path": "/api/cron/link-health",
+      "// Hobby allows once per day only; a shorter interval fails at deploy.": "",
+      "schedule": "0 4 * * *"
+    }
+  ]
+}

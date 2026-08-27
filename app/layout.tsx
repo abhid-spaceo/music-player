@@ -11,8 +11,14 @@ import '@/styles/tokens.css';
 import '@/styles/base.css';
 
 export const metadata: Metadata = {
-  title: 'Library',
-  description: 'A private music player.',
+  title: 'Music Player',
+  description: 'A private index over the slice of YouTube I actually listen to.',
+  manifest: '/manifest.webmanifest',
+  appleWebApp: { capable: true, statusBarStyle: 'black-translucent', title: 'Player' },
+  icons: {
+    icon: [{ url: '/favicon.png', sizes: '48x48', type: 'image/png' }],
+    apple: [{ url: '/apple-touch-icon.png', sizes: '180x180' }],
+  },
 };
 
 export const viewport: Viewport = {

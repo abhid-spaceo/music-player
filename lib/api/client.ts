@@ -31,7 +31,7 @@ export async function apiGet<T>(path: string): Promise<{ data: T; meta?: Record<
 
 export async function apiSend<T>(
   path: string,
-  method: 'POST' | 'PATCH' | 'DELETE',
+  method: 'POST' | 'PUT' | 'PATCH' | 'DELETE',
   payload?: unknown,
 ): Promise<T> {
   if (!csrfToken) await getSession();

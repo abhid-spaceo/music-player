@@ -30,6 +30,8 @@
 .embed iframe { display: block; width: 200px; height: 200px; border: 0; }
 
 .meta { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.identity { min-width: 0; }
+.aside { margin-top: auto; }
 .title { font: var(--t-row-title); color: var(--bone); }
 .channel { margin-top: 2px; font: var(--t-row-artist); color: var(--dim); }
 .times {
@@ -69,4 +71,28 @@
 
 @media (min-width: 1024px) {
   .panel { bottom: 0; left: var(--sidebar-w); }
+
+  /*
+   * At 1280 the meta column stretched the full remaining width and left a large
+   * dead area to the right of the controls. Three zones instead: identity on
+   * the left, transport centred, times and attribution right-aligned.
+   */
+  .meta {
+    flex-direction: row;
+    align-items: center;
+    gap: 24px;
+  }
+  .identity { flex: 1; min-width: 0; }
+  .controls { flex: none; margin-top: 0; }
+  .aside {
+    flex: 1;
+    min-width: 0;
+    margin-top: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+  }
+  .times { margin-top: 0; }
+  .attribution { margin-top: 0; }
 }

@@ -1,0 +1,90 @@
+.create { flex: none; display: flex; gap: 8px; padding: 12px var(--gutter) 14px; }
+
+.input {
+  flex: 1;
+  min-width: 0;
+  min-height: var(--tap);
+  padding: 0 12px;
+  border: 1px solid var(--outline);
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--bone);
+  font: 400 14.5px var(--sans);
+}
+.input::placeholder { color: var(--dimmer); }
+
+.row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  /* Tighter than a library row: this row carries four controls. */
+  gap: 8px;
+  height: var(--row-h);
+  padding: 0 var(--gutter);
+  box-shadow: inset 0 -1px 0 var(--divider);
+}
+.name { flex: 1; min-width: 0; font: var(--t-row-title); color: var(--bone); }
+.count {
+  flex: none;
+  font: var(--t-meta);
+  letter-spacing: var(--ls-meta);
+  color: var(--dim);
+}
+.del {
+  flex: none;
+  width: 34px;
+  height: var(--tap);
+  color: var(--dimmer);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+/* The create-playlist button keeps a full 44px target. */
+.create .del { width: var(--tap); }
+
+/* Reorder controls on the detail screen. */
+.move {
+  flex: none;
+  width: 30px;
+  height: var(--tap);
+  color: var(--dimmer);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.move:disabled { opacity: 0.3; }
+.dragging { opacity: 0.4; }
+.dropTarget { box-shadow: inset 0 2px 0 var(--bone), inset 0 -1px 0 var(--divider); }
+/*
+ * The grip is a DRAG handle, and HTML5 drag does not work on touch. Showing it
+ * on a phone promises an interaction that is not there, and it was stealing
+ * width from the title. Desktop only; the arrow buttons are what work
+ * everywhere, including with a keyboard.
+ */
+.grip { display: none; }
+
+@media (min-width: 1024px) {
+  .grip {
+    flex: none;
+    width: 22px;
+    color: var(--dimmer);
+    cursor: grab;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+.addList { flex: none; padding: 0 var(--gutter) 8px; }
+.addRow {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 36px;
+  align-items: center;
+  color: var(--dim);
+  font: var(--t-row-artist);
+  text-align: left;
+}
+.addRow:hover { color: var(--bone); }

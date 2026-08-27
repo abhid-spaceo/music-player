@@ -1,48 +1,41 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { ScreenHeader } from '@/components/chrome/ScreenHeader';
 import { usePlayer } from '@/components/player/PlayerProvider';
-import { useApi } from '@/lib/api/client';
+import { useDebouncedSearch } from '@/lib/api/use-debounced-search';
 import { isPlayable, toTrack, type ApiTrackRow } from '@/lib/library/types';
 import { TrackRow } from './TrackRow';
 import styles from './LibraryScreen.module.css';
 import search from './SearchScreen.module.css';
 
 /**
- * Searches my own stored metadata, never YouTube. Calling `search.list` would
- * cap this feature at 100 requests a day — see the standing constraint in
+ * Searches MY stored metadata, never YouTube. Calling `search.list` would cap
+ * this at 100 requests a day — see the standing constraint in
  * docs/phase-0-youtube-grounding.md §1.2.
- *
- * Filtering is in-memory for now; debouncing and request cancellation arrive
- * with the server-side query in Phase 5.
  */
 export function SearchScreen() {
   const { current, playQueue } = usePlayer();
   const [term, setTerm] = useState('');
-  const { data, loading } = useApi<ApiTrackRow[]>('/api/tracks?limit=100');
 
-  const tracks = useMemo(() => (data ?? []).map(toTrack), [data]);
-  const needle = term.trim().toLowerCase();
+  const buildPath = useCallback(
+    (t: string) => `/api/tracks?limit=100&q=${encodeURIComponent(t)}`,
+    [],
+  );
+  const { results, searching, error, ran } = useDebouncedSearch<ApiTrackRow>(term, buildPath);
 
-  const hits = useMemo(() => {
-    if (!needle) return [];
-    return tracks.filter(
-      (t) =>
-        t.title.toLowerCase().includes(needle) ||
-        t.channelTitle.toLowerCase().includes(needle) ||
-        (t.sortArtist ?? '').toLowerCase().includes(needle),
-    );
-  }, [tracks, needle]);
-
+  const hits = useMemo(() => results.map(toTrack), [results]);
   const playable = hits.filter(isPlayable);
+
+  const meta = searching
+    ? 'SEARCHING…'
+    : ran
+      ? `${hits.length} MATCHES`
+      : 'YOUR LIBRARY ONLY';
 
   return (
     <>
-      <ScreenHeader
-        title="Search"
-        meta={needle ? `${hits.length} MATCHES` : loading ? 'LOADING…' : 'YOUR LIBRARY ONLY'}
-      />
+      <ScreenHeader title="Search" meta={meta} />
       <div className={search.field}>
         <input
           className={search.input}
@@ -55,9 +48,13 @@ export function SearchScreen() {
       </div>
       <div className={styles.rule} />
       <ol className={`${styles.list} no-scrollbar`}>
-        {!needle ? (
+        {error ? (
+          <li className={styles.state} role="status">
+            {error}
+          </li>
+        ) : !ran ? (
           <li className={styles.state}>Type to search titles and channels.</li>
-        ) : hits.length === 0 ? (
+        ) : hits.length === 0 && !searching ? (
           <li className={styles.state}>Nothing matches “{term.trim()}”.</li>
         ) : (
           hits.map((t) => (

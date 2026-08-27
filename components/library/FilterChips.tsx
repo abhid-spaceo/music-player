@@ -7,7 +7,7 @@ import styles from './FilterChips.module.css';
  * architecture, a YouTube video has a channel rather than an artist, and
  * ISSUES surfaces the link rot that a library of links accumulates.
  */
-export const FILTERS = ['RECENT', 'A–Z', 'CHANNEL', 'ISSUES'] as const;
+export const FILTERS = ['RECENT', 'A–Z', 'CHANNEL', 'FAVES', 'ISSUES'] as const;
 export type Filter = (typeof FILTERS)[number];
 
 type Props = { active: Filter; onChange: (f: Filter) => void };

@@ -66,23 +66,20 @@ export async function queryOne<T extends Record<string, unknown>>(
  * transaction on a random connection and leak it. Phase 5's drag-to-reorder
  * needs this.
  */
-export async function withTransaction<T>(
-  fn: (client: {
-    query: <R extends Record<string, unknown>>(
-      text: string,
-      params?: readonly unknown[],
-    ) => Promise<R[]>;
-  }) => Promise<T>,
-): Promise<T> {
+export type TxQuery = <R extends Record<string, unknown>>(
+  text: string,
+  params?: readonly unknown[],
+) => Promise<R[]>;
+
+export async function withTransaction<T>(fn: (q: TxQuery) => Promise<T>): Promise<T> {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
-    const result = await fn({
-      query: async <R extends Record<string, unknown>>(
-        text: string,
-        params: readonly unknown[] = [],
-      ) => (await client.query(text, params as unknown[])).rows as R[],
-    });
+    const q: TxQuery = async <R extends Record<string, unknown>>(
+      text: string,
+      params: readonly unknown[] = [],
+    ) => (await client.query(text, params as unknown[])).rows as R[];
+    const result = await fn(q);
     await client.query('COMMIT');
     return result;
   } catch (err) {
