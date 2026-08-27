@@ -33,6 +33,9 @@ type PlayerApi = {
   error: PlaybackError;
   shuffle: boolean;
   repeat: 'off' | 'all' | 'one';
+  /** 0-100. Mirrors the YouTube player, which owns the real value. */
+  volume: number;
+  muted: boolean;
 
   playQueue: (tracks: Track[], startIndex?: number) => void;
   toggle: () => void;
@@ -41,6 +44,8 @@ type PlayerApi = {
   seek: (seconds: number) => void;
   setShuffle: (on: boolean) => void;
   cycleRepeat: () => void;
+  setVolume: (volume: number) => void;
+  toggleMute: () => void;
   /** Registers the DOM node the iframe is mounted into. */
   registerHost: (node: HTMLDivElement | null) => void;
 };
@@ -52,6 +57,8 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   const [index, setIndex] = useState(0);
   const [playing, setPlaying] = useState(false);
   const [position, setPosition] = useState(0);
+  const [volume, setVolumeState] = useState(100);
+  const [muted, setMuted] = useState(false);
   const [duration, setDuration] = useState(0);
   const [ready, setReady] = useState(false);
   const [error, setError] = useState<PlaybackError>(null);
@@ -83,6 +90,9 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   const queueRef = useRef<Track[]>([]);
   const indexRef = useRef(0);
   const repeatRef = useRef<'off' | 'all' | 'one'>('off');
+  /** Read in onReady, which fires long after the first render. */
+  const volumeRef = useRef(100);
+  const mutedRef = useRef(false);
 
   // Synced in effects, never during render. The IFrame API's callbacks close
   // over whatever these hold at fire time, which is how onStateChange sees the
@@ -96,6 +106,12 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     repeatRef.current = repeat;
   }, [repeat]);
+  useEffect(() => {
+    volumeRef.current = volume;
+  }, [volume]);
+  useEffect(() => {
+    mutedRef.current = muted;
+  }, [muted]);
 
   const advance = useCallback((delta: number, auto: boolean) => {
     const q = queueRef.current;
@@ -152,6 +168,14 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
             onReady: (e: { target: YTPlayer }) => {
               readyRef.current = true;
               setReady(true);
+              // The player starts at its own remembered volume. Push ours onto
+              // it so the slider is telling the truth from the first frame.
+              try {
+                e.target.setVolume(volumeRef.current);
+                if (mutedRef.current) e.target.mute();
+              } catch {
+                // A player that rejects a volume call is still a usable player.
+              }
               // Apply a click that arrived before the player existed. The
               // original click is still the user gesture that authorises this.
               const pending = pendingRef.current;
@@ -246,6 +270,46 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     setPosition(Math.max(0, seconds));
   }, []);
 
+  /**
+   * Volume lives in the YouTube player; this only mirrors it. Setting a level
+   * above zero also unmutes, because a slider that moves while silent is a lie.
+   */
+  const setVolume = useCallback((next: number) => {
+    const clamped = Math.round(Math.min(100, Math.max(0, next)));
+    setVolumeState(clamped);
+    const player = playerRef.current;
+    if (!player) return;
+    try {
+      player.setVolume(clamped);
+      if (clamped > 0 && mutedRef.current) {
+        player.unMute();
+        setMuted(false);
+      }
+    } catch {
+      // Pre-ready players throw; the level is applied again in onReady.
+    }
+  }, []);
+
+  const toggleMute = useCallback(() => {
+    const next = !mutedRef.current;
+    setMuted(next);
+    const player = playerRef.current;
+    if (!player) return;
+    try {
+      if (next) player.mute();
+      else {
+        player.unMute();
+        // Unmuting at zero would stay silent and look broken.
+        if (volumeRef.current === 0) {
+          player.setVolume(50);
+          setVolumeState(50);
+        }
+      }
+    } catch {
+      // Same as above: onReady re-applies.
+    }
+  }, []);
+
   const value = useMemo<PlayerApi>(
     () => ({
       queue,
@@ -258,6 +322,8 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
       error,
       shuffle,
       repeat,
+      volume,
+      muted,
       playQueue,
       toggle,
       next: () => advance(1, false),
@@ -266,11 +332,14 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
       setShuffle: setShuffleState,
       cycleRepeat: () =>
         setRepeat((r) => (r === 'off' ? 'all' : r === 'all' ? 'one' : 'off')),
+      setVolume,
+      toggleMute,
       registerHost,
     }),
     [
       queue, index, playing, position, duration, ready, error, shuffle, repeat,
-      playQueue, toggle, advance, seek, registerHost,
+      volume, muted,
+      playQueue, toggle, advance, seek, setVolume, toggleMute, registerHost,
     ],
   );
 

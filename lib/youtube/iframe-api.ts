@@ -32,6 +32,12 @@ export type YTPlayer = {
   getCurrentTime(): number;
   getDuration(): number;
   getPlayerState(): YTPlayerState;
+  /** 0-100. The player clamps out-of-range values itself. */
+  setVolume(volume: number): void;
+  getVolume(): number;
+  mute(): void;
+  unMute(): void;
+  isMuted(): boolean;
   destroy(): void;
 };
 

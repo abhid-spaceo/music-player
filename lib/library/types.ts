@@ -12,6 +12,8 @@ export type Track = {
   title: string;
   channelTitle: string;
   durationSec: number;
+  /** YouTube's own thumbnail. Shown as artwork; never re-hosted or altered. */
+  thumbnailUrl: string | null;
   /** My own field. Additive — it never replaces `title` or `channelTitle`. */
   sortArtist: string | null;
   note: string | null;
@@ -26,6 +28,7 @@ export type ApiTrackRow = {
   title: string;
   channel_title: string;
   duration_sec: number;
+  thumbnail_url: string | null;
   sort_artist: string | null;
   note: string | null;
   availability: Availability;
@@ -41,6 +44,7 @@ export function toTrack(row: ApiTrackRow): Track {
     title: row.title,
     channelTitle: row.channel_title,
     durationSec: row.duration_sec,
+    thumbnailUrl: row.thumbnail_url,
     sortArtist: row.sort_artist,
     note: row.note,
     availability: row.availability,
