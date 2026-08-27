@@ -121,3 +121,57 @@ export const PARSE_FAILURE_MESSAGES: Record<ParseFailure, string> = {
   'playlist-without-video': 'That is a playlist link, not a video. Open a video and copy its link.',
   'channel-or-user-url': 'That is a channel link, not a video.',
 };
+
+
+/* ------------------------------------------------------------------------ *
+ * Playlists
+ *
+ * Deliberately a separate function rather than a new `parseYouTubeUrl` branch.
+ * `watch?v=X&list=Y` must keep adding only video X — anyone copying a link from
+ * inside a playlist would otherwise import hundreds of songs by accident. So a
+ * link counts as a playlist only when it carries no video id at all, which is
+ * exactly the existing `playlist-without-video` case.
+ * ------------------------------------------------------------------------ */
+
+/** PL/UU/FL/OL/LL ids vary in length; RD (Mix) is handled separately below. */
+const PLAYLIST_ID_RE = /^[A-Za-z0-9_-]{13,64}$/;
+
+export type PlaylistParseFailure = 'not-a-playlist' | 'mix-not-supported' | 'malformed-playlist-id';
+
+export type PlaylistParseResult =
+  | { ok: true; playlistId: string }
+  | { ok: false; reason: PlaylistParseFailure };
+
+export function parsePlaylistId(input: string): PlaylistParseResult {
+  // Only a link with no video in it can be a playlist import.
+  const asVideo = parseYouTubeUrl(input);
+  if (asVideo.ok || asVideo.reason !== 'playlist-without-video') {
+    return { ok: false, reason: 'not-a-playlist' };
+  }
+
+  const raw = input.trim();
+  const withScheme = /^[a-zA-Z][a-zA-Z0-9+.-]*:\/\//.test(raw) ? raw : `https://${raw}`;
+
+  let list: string | null;
+  try {
+    list = new URL(withScheme).searchParams.get('list');
+  } catch {
+    return { ok: false, reason: 'not-a-playlist' };
+  }
+  if (!list) return { ok: false, reason: 'not-a-playlist' };
+
+  // RD… is a Mix: generated per viewer, and the Data API will not serve it.
+  // Saying so beats letting the request fail with an opaque 404.
+  if (/^RD/.test(list)) return { ok: false, reason: 'mix-not-supported' };
+
+  return PLAYLIST_ID_RE.test(list)
+    ? { ok: true, playlistId: list }
+    : { ok: false, reason: 'malformed-playlist-id' };
+}
+
+export const PLAYLIST_FAILURE_MESSAGES: Record<PlaylistParseFailure, string> = {
+  'not-a-playlist': 'That is not a playlist link.',
+  'mix-not-supported':
+    'YouTube Mixes (list=RD…) are generated per viewer and cannot be imported. Open the playlist itself and copy that link.',
+  'malformed-playlist-id': 'That playlist ID does not look valid.',
+};

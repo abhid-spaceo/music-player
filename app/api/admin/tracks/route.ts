@@ -4,13 +4,19 @@ import { assertCsrf } from '@/lib/auth/csrf';
 import { requireAdmin } from '@/lib/auth/guard';
 import { query } from '@/lib/db/client';
 import {
+  fetchPlaylistVideoIds,
   fetchVideoMetadata,
   YouTubeApiError,
   YouTubeQuotaError,
   type VideoMetadata,
 } from '@/lib/youtube/api';
 import { youtubeApiKey, youtubeRegion } from '@/lib/youtube/config';
-import { PARSE_FAILURE_MESSAGES, parseYouTubeUrl } from '@/lib/youtube/parse-url';
+import {
+  PARSE_FAILURE_MESSAGES,
+  PLAYLIST_FAILURE_MESSAGES,
+  parsePlaylistId,
+  parseYouTubeUrl,
+} from '@/lib/youtube/parse-url';
 
 /** Either a list of URLs or one pasted blob to split on whitespace. */
 const Body = z
@@ -22,6 +28,14 @@ const Body = z
 
 type Outcome =
   | { input: string; status: 'added'; videoId: string; title: string }
+  | {
+      input: string;
+      status: 'playlist';
+      playlistId: string;
+      found: number;
+      skipped: number;
+      truncated: boolean;
+    }
   | { input: string; status: 'duplicate'; videoId: string }
   | { input: string; status: 'invalid'; reason: string }
   | { input: string; status: 'not-found'; videoId: string };
@@ -48,7 +62,49 @@ export async function POST(request: Request) {
     // is reported without costing a second lookup.
     const wanted = new Map<string, string>();
 
+    let apiCalls = 0;
+
     for (const input of inputs) {
+      // A playlist link expands into its videos, which then run through exactly
+      // the same duplicate-check and metadata path as a pasted video link.
+      // `watch?v=X&list=Y` is deliberately NOT a playlist — see parsePlaylistId.
+      const asPlaylist = parsePlaylistId(input);
+      if (asPlaylist.ok) {
+        try {
+          const list = await fetchPlaylistVideoIds(asPlaylist.playlistId, {
+            apiKey: youtubeApiKey(),
+          });
+          apiCalls += list.callCount;
+          outcomes.push({
+            input,
+            status: 'playlist',
+            playlistId: asPlaylist.playlistId,
+            found: list.videoIds.length,
+            skipped: list.skipped,
+            truncated: list.truncated,
+          });
+          for (const videoId of list.videoIds) {
+            if (!wanted.has(videoId)) wanted.set(videoId, input);
+          }
+        } catch (err) {
+          if (err instanceof YouTubeQuotaError) return fail(err.message, 429);
+          if (err instanceof YouTubeApiError) {
+            outcomes.push({ input, status: 'invalid', reason: err.message });
+            continue;
+          }
+          throw err;
+        }
+        continue;
+      }
+      if (asPlaylist.reason !== 'not-a-playlist') {
+        outcomes.push({
+          input,
+          status: 'invalid',
+          reason: PLAYLIST_FAILURE_MESSAGES[asPlaylist.reason],
+        });
+        continue;
+      }
+
       const result = parseYouTubeUrl(input);
       if (!result.ok) {
         outcomes.push({
@@ -85,7 +141,6 @@ export async function POST(request: Request) {
     }
 
     const toFetch = [...wanted.keys()];
-    let apiCalls = 0;
 
     if (toFetch.length > 0) {
       let found: VideoMetadata[] = [];
@@ -97,7 +152,7 @@ export async function POST(request: Request) {
         });
         found = result.found;
         missing = result.missing;
-        apiCalls = result.callCount;
+        apiCalls += result.callCount;
       } catch (err) {
         if (err instanceof YouTubeQuotaError) return fail(err.message, 429);
         if (err instanceof YouTubeApiError) return fail(err.message, 502);
@@ -144,6 +199,7 @@ export async function POST(request: Request) {
       added: outcomes.filter((o) => o.status === 'added').length,
       duplicate: outcomes.filter((o) => o.status === 'duplicate').length,
       invalid: outcomes.filter((o) => o.status === 'invalid').length,
+      playlists: outcomes.filter((o) => o.status === 'playlist').length,
       notFound: outcomes.filter((o) => o.status === 'not-found').length,
     };
 

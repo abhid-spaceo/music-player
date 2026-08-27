@@ -208,3 +208,113 @@ export async function fetchVideoMetadata(
 
   return { found, missing: unique.filter((id) => !seen.has(id)), callCount };
 }
+
+
+/* ------------------------------------------------------------------------ *
+ * Playlists
+ *
+ * `playlistItems.list` costs 1 unit per page of 50, the same shape as
+ * `videos.list`. Importing a 269-video playlist therefore costs 6 units to read
+ * the list plus 6 to fetch metadata — 12 of the daily 10,000.
+ * ------------------------------------------------------------------------ */
+
+/**
+ * Hard ceiling on one import. The add-tracks route caps a request at 500 inputs
+ * and a person pasting a 5,000-video playlist almost certainly did not mean to.
+ * Hitting the cap is reported, never silently truncated.
+ */
+export const MAX_PLAYLIST_ITEMS = 500;
+
+export type PlaylistFetchOptions = {
+  apiKey: string;
+  fetchImpl?: typeof fetch;
+};
+
+export type PlaylistFetchResult = {
+  videoIds: string[];
+  /** Entries YouTube reports as deleted or private — they carry no usable id. */
+  skipped: number;
+  /** True when the playlist is longer than MAX_PLAYLIST_ITEMS. */
+  truncated: boolean;
+  callCount: number;
+};
+
+type RawPlaylistItem = {
+  contentDetails?: { videoId?: string };
+  snippet?: { title?: string };
+};
+
+/** YouTube's own placeholder titles for entries it will not serve. */
+const UNPLAYABLE_TITLES = new Set(['Deleted video', 'Private video']);
+
+export async function fetchPlaylistVideoIds(
+  playlistId: string,
+  { apiKey, fetchImpl = fetch }: PlaylistFetchOptions,
+): Promise<PlaylistFetchResult> {
+  if (!apiKey) throw new YouTubeApiError('YOUTUBE_API_KEY is not set', 500);
+
+  const videoIds: string[] = [];
+  const seen = new Set<string>();
+  let skipped = 0;
+  let callCount = 0;
+  let truncated = false;
+  let pageToken: string | undefined;
+
+  do {
+    const url = new URL(`${apiBase()}/playlistItems`);
+    url.searchParams.set('part', 'contentDetails,snippet');
+    url.searchParams.set('playlistId', playlistId);
+    url.searchParams.set('maxResults', String(MAX_IDS_PER_CALL));
+    url.searchParams.set('key', apiKey);
+    if (pageToken) url.searchParams.set('pageToken', pageToken);
+
+    const response = await fetchImpl(url, { headers: { accept: 'application/json' } });
+    callCount++;
+
+    if (!response.ok) {
+      const body = await response.text().catch(() => '');
+      if (response.status === 403 && /quota/i.test(body)) {
+        throw new YouTubeQuotaError(
+          'YouTube Data API daily quota exhausted. Adding tracks will work again after the quota resets.',
+        );
+      }
+      if (response.status === 404) {
+        throw new YouTubeApiError(
+          'No such playlist, or it is private. Only public and unlisted playlists can be imported.',
+          404,
+        );
+      }
+      throw new YouTubeApiError(
+        `YouTube API returned ${response.status}${body ? `: ${body.slice(0, 300)}` : ''}`,
+        response.status,
+      );
+    }
+
+    const payload = (await response.json()) as {
+      items?: RawPlaylistItem[];
+      nextPageToken?: string;
+    };
+
+    for (const item of payload.items ?? []) {
+      const id = item.contentDetails?.videoId;
+      const title = item.snippet?.title ?? '';
+      // A removed entry keeps its id but can never be played, and fetching it
+      // would spend quota to learn what the title already says.
+      if (!id || UNPLAYABLE_TITLES.has(title)) {
+        skipped++;
+        continue;
+      }
+      if (seen.has(id)) continue;
+      if (videoIds.length >= MAX_PLAYLIST_ITEMS) {
+        truncated = true;
+        break;
+      }
+      seen.add(id);
+      videoIds.push(id);
+    }
+
+    pageToken = truncated ? undefined : payload.nextPageToken;
+  } while (pageToken);
+
+  return { videoIds, skipped, truncated, callCount };
+}
