@@ -8,6 +8,7 @@ import {
   PlaylistsIcon,
   SearchIcon,
   AdminIcon,
+  BrowseIcon,
 } from '@/components/primitives/Icons';
 import styles from './TabBar.module.css';
 
@@ -15,6 +16,7 @@ export type Role = 'admin' | 'listener';
 
 export const DESTINATIONS = [
   { href: '/library', label: 'LIBRARY', Icon: LibraryIcon, adminOnly: false },
+  { href: '/browse', label: 'BROWSE', Icon: BrowseIcon, adminOnly: false },
   { href: '/search', label: 'SEARCH', Icon: SearchIcon, adminOnly: false },
   { href: '/playlists', label: 'PLAYLISTS', Icon: PlaylistsIcon, adminOnly: false },
   { href: '/queue', label: 'QUEUE', Icon: QueueIcon, adminOnly: false },

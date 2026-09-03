@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { getSession } from '@/lib/api/client';
 import { KeyboardShortcuts } from '@/components/player/KeyboardShortcuts';
 import { PlayerPanel } from '@/components/player/PlayerPanel';
+import { NowPlaying } from '@/components/player/NowPlaying';
 import { ServiceWorkerRegistrar } from './ServiceWorkerRegistrar';
 import { usePlayer } from '@/components/player/PlayerProvider';
 import { Sidebar } from './Sidebar';
@@ -57,6 +58,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <Sidebar role={role} />
       <div className={styles.main}>{checked ? children : null}</div>
       <PlayerPanel />
+      <NowPlaying />
       <TabBar role={role} />
       <KeyboardShortcuts />
       <ServiceWorkerRegistrar />

@@ -1,0 +1,66 @@
+.bar {
+  position: relative;
+  width: 100%;
+  cursor: pointer;
+  touch-action: none;
+  color: #fff;
+}
+.bar:focus-visible {
+  outline: 2px solid #4af;
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+.mini {
+  height: 6px;
+}
+.full {
+  height: 14px;
+}
+.bar::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  margin: auto 0;
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.18);
+}
+.fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  margin: auto 0;
+  height: 4px;
+  border-radius: 999px;
+  background: currentColor;
+}
+.knob {
+  position: absolute;
+  top: 50%;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: currentColor;
+  transform: translate(-50%, -50%);
+  opacity: 0;
+  transition: opacity 0.12s;
+}
+.bar:hover .knob,
+.bar:focus-visible .knob,
+.full .knob {
+  opacity: 1;
+}
+.preview {
+  position: absolute;
+  bottom: 100%;
+  transform: translateX(-50%);
+  margin-bottom: 4px;
+  font-size: 11px;
+  padding: 2px 5px;
+  border-radius: 4px;
+  background: #000;
+  color: #fff;
+  white-space: nowrap;
+  pointer-events: none;
+}

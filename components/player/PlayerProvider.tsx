@@ -17,6 +17,9 @@ import {
   type YTPlayerState,
 } from '@/lib/youtube/iframe-api';
 import type { Track } from '@/lib/library/types';
+import { reorder, removeAt as removeAtPure, indexAfterRemove } from '@/lib/player/queue';
+import { shouldRecordPlay } from '@/lib/player/record-play';
+import { apiSend } from '@/lib/api/client';
 
 export type PlaybackError = { reason: string; message: string; trackId: string } | null;
 
@@ -48,6 +51,15 @@ type PlayerApi = {
   toggleMute: () => void;
   /** Registers the DOM node the iframe is mounted into. */
   registerHost: (node: HTMLDivElement | null) => void;
+  /** Whether the full-screen Now Playing page is open. */
+  expanded: boolean;
+  setExpanded: (open: boolean) => void;
+  /** Play the queue item at `index`. */
+  jumpTo: (index: number) => void;
+  /** Move a queue item, keeping the current track selected. */
+  reorderQueue: (from: number, to: number) => void;
+  /** Drop a queue item, keeping the current track playing. */
+  removeAt: (index: number) => void;
 };
 
 const PlayerContext = createContext<PlayerApi | null>(null);
@@ -64,6 +76,9 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   const [error, setError] = useState<PlaybackError>(null);
   const [shuffle, setShuffleState] = useState(false);
   const [repeat, setRepeat] = useState<'off' | 'all' | 'one'>('off');
+  const [expanded, setExpanded] = useState(false);
+  /** Last track id we recorded a play for — dedupes repeats/seeks. */
+  const lastRecordedRef = useRef<string | null>(null);
 
   const playerRef = useRef<YTPlayer | null>(null);
   const hostRef = useRef<HTMLDivElement | null>(null);
@@ -113,6 +128,15 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     mutedRef.current = muted;
   }, [muted]);
 
+  /** Record a play once per track change. Fire-and-forget; never blocks audio. */
+  const recordPlay = useCallback((track: Track) => {
+    if (!shouldRecordPlay(lastRecordedRef.current, track.id)) return;
+    lastRecordedRef.current = track.id;
+    void apiSend('/api/plays', 'POST', { trackId: track.id, source: 'queue' }).catch(() => {
+      /* a missed stat must never interrupt music */
+    });
+  }, []);
+
   const advance = useCallback((delta: number, auto: boolean) => {
     const q = queueRef.current;
     if (q.length === 0) return;
@@ -138,6 +162,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
 
     setIndex(nextIndex);
     setError(null);
+    recordPlay(track);
     // loadVideoById starts playback itself. It is only reached after a
     // user-initiated first play, so the autoplay policy is satisfied.
     if (playerRef.current && readyRef.current) {
@@ -145,7 +170,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     } else {
       pendingRef.current = track.youtubeId;
     }
-  }, []);
+  }, [recordPlay]);
 
   const registerHost = useCallback((node: HTMLDivElement | null) => {
     hostRef.current = node;
@@ -239,6 +264,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     setError(null);
     queueRef.current = tracks;
     indexRef.current = startIndex;
+    recordPlay(track);
 
     unlockedRef.current = true;
 
@@ -252,7 +278,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     // This call is inside the click handler that reached us, so it counts as
     // the user gesture that unlocks programmatic playback later.
     player.loadVideoById(track.youtubeId);
-  }, []);
+  }, [recordPlay]);
 
   const toggle = useCallback(() => {
     const player = playerRef.current;
@@ -268,6 +294,38 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     if (!readyRef.current) return;
     playerRef.current?.seekTo(Math.max(0, seconds), true);
     setPosition(Math.max(0, seconds));
+  }, []);
+
+  const jumpTo = useCallback((i: number) => {
+    const q = queueRef.current;
+    if (i < 0 || i >= q.length) return;
+    const track = q[i]!;
+    setIndex(i);
+    setError(null);
+    recordPlay(track);
+    if (playerRef.current && readyRef.current) {
+      playerRef.current.loadVideoById(track.youtubeId);
+    } else {
+      pendingRef.current = track.youtubeId;
+    }
+  }, [recordPlay]);
+
+  const reorderQueue = useCallback((from: number, to: number) => {
+    setQueue((prev) => {
+      const currentId = prev[indexRef.current]?.id;
+      const nextQueue = reorder(prev, from, to);
+      const newIndex = nextQueue.findIndex((t) => t.id === currentId);
+      if (newIndex >= 0) setIndex(newIndex);
+      return nextQueue;
+    });
+  }, []);
+
+  const removeAt = useCallback((i: number) => {
+    setQueue((prev) => {
+      const nextQueue = removeAtPure(prev, i);
+      setIndex((cur) => indexAfterRemove(cur, i));
+      return nextQueue;
+    });
   }, []);
 
   /**
@@ -335,11 +393,17 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
       setVolume,
       toggleMute,
       registerHost,
+      expanded,
+      setExpanded,
+      jumpTo,
+      reorderQueue,
+      removeAt,
     }),
     [
       queue, index, playing, position, duration, ready, error, shuffle, repeat,
-      volume, muted,
+      volume, muted, expanded,
       playQueue, toggle, advance, seek, setVolume, toggleMute, registerHost,
+      jumpTo, reorderQueue, removeAt,
     ],
   );
 

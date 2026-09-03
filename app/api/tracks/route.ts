@@ -10,6 +10,9 @@ const Params = z.object({
   q: z.string().trim().max(200).optional(),
   /** 'favourites' narrows to the caller's favourites. */
   scope: z.enum(['all', 'favourites']).default('all'),
+  /** Curated-tag slugs; narrow to tracks carrying that mood / genre. */
+  mood: z.string().trim().max(60).optional(),
+  genre: z.string().trim().max(60).optional(),
 });
 
 /** Paginated library read. Any signed-in role may read; only admins write. */
@@ -25,14 +28,18 @@ export async function GET(request: Request) {
       offset: url.searchParams.get('offset') || undefined,
       q: url.searchParams.get('q') || undefined,
       scope: url.searchParams.get('scope') || undefined,
+      mood: url.searchParams.get('mood') || undefined,
+      genre: url.searchParams.get('genre') || undefined,
     });
     if (!parsed.success) return fail('Invalid query parameters', 400);
-    const { limit, offset, q, scope } = parsed.data;
+    const { limit, offset, q, scope, mood, genre } = parsed.data;
 
     // Trigram-backed substring match (see migration 004). ILIKE with a leading
     // wildcard cannot use a btree, which is why the trigram GIN indexes exist.
     const needle = q ? `%${q}%` : null;
     const favouritesOnly = scope === 'favourites';
+    const moodSlug = mood ?? null;
+    const genreSlug = genre ?? null;
 
     const rows = await query(
       // `id` is the tiebreaker. Without it, rows sharing an added_at — every
@@ -42,7 +49,13 @@ export async function GET(request: Request) {
               t.thumbnail_url, t.sort_artist, t.note, t.availability,
               t.made_for_kids, t.age_restricted, t.live_broadcast_content,
               t.added_at,
-              (f.track_id IS NOT NULL) AS is_favourite
+              (f.track_id IS NOT NULL) AS is_favourite,
+              COALESCE((SELECT array_agg(g.name ORDER BY g.name)
+                          FROM track_tags tt JOIN tags g ON g.id = tt.tag_id
+                         WHERE tt.track_id = t.id AND g.kind = 'mood'), '{}') AS moods,
+              COALESCE((SELECT array_agg(g.name ORDER BY g.name)
+                          FROM track_tags tt JOIN tags g ON g.id = tt.tag_id
+                         WHERE tt.track_id = t.id AND g.kind = 'genre'), '{}') AS genres
          FROM tracks t
          LEFT JOIN favourites f ON f.track_id = t.id AND f.user_id = $3
         WHERE ($4::text IS NULL
@@ -50,9 +63,15 @@ export async function GET(request: Request) {
                OR t.channel_title ILIKE $4
                OR t.sort_artist ILIKE $4)
           AND (NOT $5::boolean OR f.track_id IS NOT NULL)
+          AND ($6::text IS NULL OR EXISTS (
+                SELECT 1 FROM track_tags tt JOIN tags g ON g.id = tt.tag_id
+                 WHERE tt.track_id = t.id AND g.kind = 'mood' AND g.slug = $6))
+          AND ($7::text IS NULL OR EXISTS (
+                SELECT 1 FROM track_tags tt JOIN tags g ON g.id = tt.tag_id
+                 WHERE tt.track_id = t.id AND g.kind = 'genre' AND g.slug = $7))
         ORDER BY t.added_at DESC, t.id DESC
         LIMIT $1 OFFSET $2`,
-      [limit, offset, session.uid, needle, favouritesOnly],
+      [limit, offset, session.uid, needle, favouritesOnly, moodSlug, genreSlug],
     );
 
     // Full-table aggregate only on the first page. Running it per page gave
@@ -60,7 +79,7 @@ export async function GET(request: Request) {
     // Full-table aggregate only on an unfiltered first page. Running it per
     // page gave back much of the Neon compute the stateless cookie saves.
     const counts =
-      offset === 0 && !needle && !favouritesOnly
+      offset === 0 && !needle && !favouritesOnly && !moodSlug && !genreSlug
         ? await queryOne<{ total: string; unavailable: string }>(
             `SELECT count(*)::text AS total,
                     count(*) FILTER (WHERE availability <> 'ok')::text AS unavailable

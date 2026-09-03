@@ -112,4 +112,17 @@
 }
 .rowButton:disabled { opacity: 0.4; cursor: default; }
 
+.tagChips { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 10px; }
+.tagChip {
+  padding: 5px 11px;
+  border: 1px solid var(--outline);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--dim);
+  font: var(--t-meta);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.tagChip[aria-pressed='true'] { background: var(--signal); border-color: transparent; color: var(--base); }
+
 .playlist { color: var(--signal); }

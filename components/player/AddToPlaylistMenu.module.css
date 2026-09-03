@@ -1,0 +1,86 @@
+.backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 60;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+.sheet {
+  width: min(440px, 100%);
+  background: #17171a;
+  color: #fff;
+  border-radius: 16px 16px 0 0;
+  padding: 16px;
+  max-height: 70vh;
+  overflow: auto;
+}
+.head {
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+.list {
+  list-style: none;
+  margin: 0 0 12px;
+  padding: 0;
+}
+.list button {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  background: none;
+  color: inherit;
+  border: 0;
+  border-radius: 8px;
+  text-align: left;
+  font-size: 15px;
+}
+.list button:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+.list button:disabled {
+  opacity: 0.5;
+}
+.count {
+  opacity: 0.5;
+  font-size: 12px;
+}
+.createRow {
+  display: flex;
+  gap: 8px;
+}
+.input {
+  flex: 1;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: #0e0e10;
+  color: #fff;
+}
+.createRow button {
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 0;
+  background: #fff;
+  color: #000;
+}
+.createRow button:disabled {
+  opacity: 0.5;
+}
+.msg {
+  opacity: 0.8;
+  padding: 6px 2px;
+  font-size: 14px;
+}
+.close {
+  margin-top: 12px;
+  width: 100%;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: none;
+  color: inherit;
+}

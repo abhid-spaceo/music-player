@@ -4,6 +4,7 @@ import { FavouriteButton } from '@/components/primitives/FavouriteButton';
 import { PauseIcon, PlayIcon, ShuffleIcon } from '@/components/primitives/Icons';
 import { formatDuration } from '@/lib/format';
 import { usePlayer } from './PlayerProvider';
+import { SeekBar } from './SeekBar';
 import styles from './PlayerPanel.module.css';
 
 /**
@@ -22,7 +23,7 @@ export function PlayerPanel() {
   const {
     current, playing, position, duration, error, repeat, shuffle, volume, muted,
     toggle, next, previous, seek, setShuffle, cycleRepeat, setVolume, toggleMute,
-    registerHost,
+    registerHost, setExpanded,
   } = usePlayer();
 
   const total = duration || current?.durationSec || 0;
@@ -36,19 +37,8 @@ export function PlayerPanel() {
       // destroyed and re-created.
       style={current ? undefined : { display: 'none' }}
     >
-      <div
-        className={styles.progress}
-        role="progressbar"
-        aria-label="Playback position"
-        aria-valuemin={0}
-        aria-valuemax={Math.round(total)}
-        aria-valuenow={Math.round(position)}
-        onClick={(e) => {
-          const box = e.currentTarget.getBoundingClientRect();
-          if (total > 0) seek(((e.clientX - box.left) / box.width) * total);
-        }}
-      >
-        <i className={styles.fill} style={{ '--pos': pct } as React.CSSProperties} />
+      <div className={styles.progress}>
+        <SeekBar position={position} total={total} onSeek={seek} variant="mini" />
       </div>
 
       <div className={styles.body}>
@@ -86,7 +76,19 @@ export function PlayerPanel() {
           <div ref={registerHost} />
         </div>
 
-        <div className={styles.identity}>
+        <div
+          className={styles.identity}
+          role="button"
+          tabIndex={0}
+          aria-label="Open now playing"
+          onClick={() => current && setExpanded(true)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              if (current) setExpanded(true);
+            }
+          }}
+        >
           {/* YouTube's own thumbnail, shown unaltered. No alt text: the title
               sits right beside it, so describing it again is noise. */}
           <span className={styles.art}>
