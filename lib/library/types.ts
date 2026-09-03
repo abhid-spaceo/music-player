@@ -20,6 +20,9 @@ export type Track = {
   availability: Availability;
   liveBroadcastContent: string | null;
   isFavourite: boolean;
+  /** Curated tags. Additive; default to [] when the API omits them. */
+  moods: string[];
+  genres: string[];
 };
 
 export type ApiTrackRow = {
@@ -35,6 +38,8 @@ export type ApiTrackRow = {
   live_broadcast_content: string | null;
   is_favourite?: boolean;
   position?: number;
+  moods?: string[];
+  genres?: string[];
 };
 
 export function toTrack(row: ApiTrackRow): Track {
@@ -50,6 +55,8 @@ export function toTrack(row: ApiTrackRow): Track {
     availability: row.availability,
     liveBroadcastContent: row.live_broadcast_content,
     isFavourite: row.is_favourite ?? false,
+    moods: row.moods ?? [],
+    genres: row.genres ?? [],
   };
 }
 

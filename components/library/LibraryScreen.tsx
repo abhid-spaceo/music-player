@@ -12,6 +12,9 @@ import { ColumnHeader } from './ColumnHeader';
 import { FilterChips, type Filter } from './FilterChips';
 import { TrackRow } from './TrackRow';
 import styles from './LibraryScreen.module.css';
+import browse from './BrowseScreen.module.css';
+
+type TagOption = { id: string; kind: 'mood' | 'genre'; name: string; slug: string };
 
 /** Shuffles a copy. Fisher-Yates, so every ordering is equally likely. */
 function shuffled<T>(items: T[]): T[] {
@@ -26,13 +29,17 @@ function shuffled<T>(items: T[]): T[] {
 export function LibraryScreen() {
   const { current, playQueue } = usePlayer();
   const [filter, setFilter] = useState<Filter>('RECENT');
+  const [tag, setTag] = useState<{ kind: 'mood' | 'genre'; slug: string } | null>(null);
 
-  // FAVES is a server-side scope, not an in-memory filter: favourites live in
-  // their own table and the row already reports is_favourite.
-  const path =
-    filter === 'FAVES'
-      ? '/api/tracks?limit=100&scope=favourites'
-      : '/api/tracks?limit=100';
+  const { data: tagData } = useApi<TagOption[]>('/api/tags');
+  const tagOptions = useMemo(() => tagData ?? [], [tagData]);
+
+  // FAVES is a server-side scope; mood/genre are server-side tag filters. Both
+  // are applied by the API, layered on top of the client-side sort below.
+  const params = new URLSearchParams({ limit: '100' });
+  if (filter === 'FAVES') params.set('scope', 'favourites');
+  if (tag) params.set(tag.kind, tag.slug);
+  const path = `/api/tracks?${params.toString()}`;
   const { data, meta: listMeta, error, loading } = useApi<ApiTrackRow[]>(path);
 
   const tracks: Track[] = useMemo(() => (data ?? []).map(toTrack), [data]);
@@ -92,7 +99,29 @@ export function LibraryScreen() {
             </Link>
           </>
         }
-        below={<FilterChips active={filter} onChange={setFilter} />}
+        below={
+          <>
+            <FilterChips active={filter} onChange={setFilter} />
+            {tagOptions.length > 0 ? (
+              <div className={browse.chips} role="group" aria-label="Filter by mood or genre">
+                {tagOptions.map((t) => {
+                  const on = tag?.kind === t.kind && tag.slug === t.slug;
+                  return (
+                    <button
+                      key={t.id}
+                      type="button"
+                      className={browse.chip}
+                      aria-pressed={on}
+                      onClick={() => setTag(on ? null : { kind: t.kind, slug: t.slug })}
+                    >
+                      {t.name}
+                    </button>
+                  );
+                })}
+              </div>
+            ) : null}
+          </>
+        }
       />
 
       <div className={styles.rule} />

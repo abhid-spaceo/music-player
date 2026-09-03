@@ -7,9 +7,12 @@ import { AVAILABILITY_LABEL, toTrack, type ApiTrackRow, type Track } from '@/lib
 import styles from './AdminScreen.module.css';
 
 type RefreshResult = { refreshed: number; markedUnavailable: string[] };
+type TagOption = { id: string; kind: 'mood' | 'genre'; name: string; slug: string };
 
 export function TrackAdminPanel() {
   const [term, setTerm] = useState('');
+  const { data: tagData } = useApi<TagOption[]>('/api/tags');
+  const allTags: TagOption[] = useMemo(() => tagData ?? [], [tagData]);
   // 100 is the route's hard maximum (app/api/tracks/route.ts). Beyond that the
   // table needs paging; search is the way through a bigger library for now.
   const path = term.trim()
@@ -20,6 +23,7 @@ export function TrackAdminPanel() {
   const [editing, setEditing] = useState<string | null>(null);
   const [artist, setArtist] = useState('');
   const [note, setNote] = useState('');
+  const [selectedTags, setSelectedTags] = useState<Set<string>>(new Set());
   const [problem, setProblem] = useState<string | null>(null);
   const [checking, setChecking] = useState(false);
   const [checkResult, setCheckResult] = useState<string | null>(null);
@@ -31,6 +35,26 @@ export function TrackAdminPanel() {
     setArtist(track.sortArtist ?? '');
     setNote(track.note ?? '');
     setProblem(null);
+    // Pre-select the track's current tags by matching name within each kind.
+    const initial = new Set(
+      allTags
+        .filter(
+          (tag) =>
+            (tag.kind === 'mood' && track.moods.includes(tag.name)) ||
+            (tag.kind === 'genre' && track.genres.includes(tag.name)),
+        )
+        .map((tag) => tag.id),
+    );
+    setSelectedTags(initial);
+  }
+
+  function toggleTag(id: string) {
+    setSelectedTags((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
   }
 
   async function save(id: string) {
@@ -40,12 +64,15 @@ export function TrackAdminPanel() {
     const payload: { sortArtist?: string; note?: string } = {};
     if (artist.trim()) payload.sortArtist = artist.trim();
     if (note.trim()) payload.note = note.trim();
-    if (Object.keys(payload).length === 0) {
-      setProblem('Nothing to save. Clearing a value is not supported yet.');
-      return;
-    }
     try {
-      await apiSend(`/api/admin/tracks/${id}`, 'PATCH', payload);
+      // Additive fields only PATCH when provided (route COALESCEs nulls away).
+      if (Object.keys(payload).length > 0) {
+        await apiSend(`/api/admin/tracks/${id}`, 'PATCH', payload);
+      }
+      // Tags always save (replace-the-set), so tag-only edits work too.
+      await apiSend(`/api/admin/tracks/${id}/tags`, 'PUT', {
+        tagIds: [...selectedTags],
+      });
       setEditing(null);
       refetch();
     } catch (err: unknown) {
@@ -161,6 +188,38 @@ export function TrackAdminPanel() {
                       onChange={(e) => setNote(e.target.value)}
                       maxLength={2000}
                     />
+                    <span className={styles.label}>Moods</span>
+                    <div className={styles.tagChips}>
+                      {allTags
+                        .filter((tag) => tag.kind === 'mood')
+                        .map((tag) => (
+                          <button
+                            key={tag.id}
+                            type="button"
+                            className={styles.tagChip}
+                            aria-pressed={selectedTags.has(tag.id)}
+                            onClick={() => toggleTag(tag.id)}
+                          >
+                            {tag.name}
+                          </button>
+                        ))}
+                    </div>
+                    <span className={styles.label}>Genres</span>
+                    <div className={styles.tagChips}>
+                      {allTags
+                        .filter((tag) => tag.kind === 'genre')
+                        .map((tag) => (
+                          <button
+                            key={tag.id}
+                            type="button"
+                            className={styles.tagChip}
+                            aria-pressed={selectedTags.has(tag.id)}
+                            onClick={() => toggleTag(tag.id)}
+                          >
+                            {tag.name}
+                          </button>
+                        ))}
+                    </div>
                     <div className={styles.editorActions}>
                       <button
                         type="button"

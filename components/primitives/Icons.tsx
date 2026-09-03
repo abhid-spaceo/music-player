@@ -39,6 +39,14 @@ export const PlaylistsIcon = ({ size = 21 }: S) => (
   </svg>
 );
 
+/** Browse: a compass, for discovering by mood and genre. */
+export const BrowseIcon = ({ size = 21 }: S) => (
+  <svg {...stroke} width={size} height={size} strokeWidth={1.7} aria-hidden="true">
+    <circle cx="12" cy="12" r="9" />
+    <path d="M15.5 8.5l-2 5-5 2 2-5z" strokeLinejoin="round" />
+  </svg>
+);
+
 /** Queue replaces Downloads: there is no offline mode in this architecture. */
 export const QueueIcon = ({ size = 21 }: S) => (
   <svg {...stroke} width={size} height={size} strokeWidth={1.7} aria-hidden="true">
