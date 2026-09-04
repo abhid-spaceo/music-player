@@ -34,6 +34,21 @@
 .full {
   height: 14px;
 }
+/*
+ * The in-panel scrubber (sits between the two time labels, next to play/pause).
+ * Yellow to match the app's one accent colour. The visible line stays thin but
+ * the element is 24px tall, so a finger has a comfortable grab area — it lives
+ * inside the 44px controls row, so this height does not grow the panel.
+ */
+.scrub {
+  height: 24px;
+  width: 100%;
+  color: var(--signal);
+}
+/* The handle stays visible: this is now the primary seek control. */
+.scrub .knob {
+  opacity: 1;
+}
 .bar::before {
   content: '';
   position: absolute;

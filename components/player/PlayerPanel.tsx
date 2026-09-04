@@ -27,7 +27,6 @@ export function PlayerPanel() {
   } = usePlayer();
 
   const total = duration || current?.durationSec || 0;
-  const pct = total > 0 ? `${Math.min(100, (position / total) * 100).toFixed(1)}%` : '0%';
 
   return (
     <section
@@ -37,10 +36,6 @@ export function PlayerPanel() {
       // destroyed and re-created.
       style={current ? undefined : { display: 'none' }}
     >
-      <div className={styles.progress}>
-        <SeekBar position={position} total={total} onSeek={seek} variant="mini" />
-      </div>
-
       <div className={styles.body}>
         {/*
           * The cage hides the player with INLINE styles, not a class. A
@@ -163,8 +158,8 @@ export function PlayerPanel() {
 
         <div className={styles.aside}>
           <span className={`${styles.time} tnum`}>{formatDuration(position)}</span>
-          <span className={styles.scrub} aria-hidden="true">
-            <i className={styles.scrubFill} style={{ '--pos': pct } as React.CSSProperties} />
+          <span className={styles.scrub}>
+            <SeekBar position={position} total={total} onSeek={seek} variant="scrub" />
           </span>
           <span className={`${styles.time} tnum`}>{formatDuration(total)}</span>
 

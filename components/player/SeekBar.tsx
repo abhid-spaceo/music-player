@@ -9,7 +9,7 @@ type Props = {
   position: number;
   total: number;
   onSeek: (seconds: number) => void;
-  variant?: 'mini' | 'full';
+  variant?: 'mini' | 'full' | 'scrub';
   ariaLabel?: string;
 };
 

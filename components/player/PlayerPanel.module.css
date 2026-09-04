@@ -14,12 +14,6 @@
   z-index: 2;
 }
 
-/*
- * The seek line rides the very top edge of the bar, full bleed. The wrapper
- * stays 2px so the panel height is unchanged; the SeekBar inside is taller and
- * overflows downward as a grab area, lifted above the body so it catches drags.
- */
-.progress { height: 2px; cursor: pointer; position: relative; z-index: 2; }
 .fill { display: block; height: 2px; width: var(--pos); background: var(--signal); }
 
 /*
@@ -150,19 +144,17 @@
 .time { font: var(--t-duration); color: var(--dim); flex: none; }
 
 /*
- * A read-only echo of the seek line above, drawn where the eye expects a
- * scrubber. Seeking stays on the full-width bar at the top of the panel: it is
- * a far larger target than a 90px strip, which matters most on a phone.
+ * The seek control. Sits between the two time labels, next to play/pause, and
+ * holds the interactive SeekBar (scrub variant). The yellow line, fill and
+ * handle are drawn by the SeekBar itself; this is just the flex slot that sizes
+ * it and centres it in the row.
  */
 .scrub {
   flex: 1;
   min-width: 40px;
-  height: 3px;
-  border-radius: 2px;
-  background: var(--track);
-  overflow: hidden;
+  display: flex;
+  align-items: center;
 }
-.scrubFill { display: block; height: 3px; width: var(--pos); background: var(--signal); }
 
 /*
  * A native range input, restyled. Custom-built sliders lose keyboard support,
@@ -279,15 +271,14 @@
   /*
    * Centring the transport costs symmetry: the two side columns are equal, so
    * the right-hand group only ever gets half the leftover width. Measured, it
-   * needs 416px and is handed 363px at 1280 and 235px at 1024 — so pieces are
-   * dropped by width, densest information first. The seek line along the top of
-   * the panel still shows progress when the scrubber goes.
+   * needs 416px and is handed 363px at 1280 and 235px at 1024 — so the volume
+   * slider is dropped by width. The scrubber stays: it is now the only seek
+   * control, so it must be present at every width.
    */
-  .scrub, .volume { display: none; }
+  .volume { display: none; }
 }
 
 @media (min-width: 1280px) {
-  .scrub { display: block; }
   .volume { display: block; }
 }
 
