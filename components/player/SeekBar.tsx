@@ -46,18 +46,34 @@ export function SeekBar({
       aria-valuetext={`${formatDuration(shown)} of ${formatDuration(total)}`}
       onPointerDown={(e) => {
         if (total <= 0) return;
-        (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+        // Track the drag on WINDOW listeners driven by plain closures — not on
+        // this element gated by the `drag` React state. The old code checked
+        // `drag === null` inside pointermove/up, but React state commits on the
+        // next render; on Android (busier main thread) a press+release finished
+        // BEFORE that commit, so the up handler still saw null and bailed — the
+        // seek silently did nothing. Closures update instantly, so there is no
+        // race, and window listeners keep tracking even when the finger drifts
+        // off the thin 12px bar (which also removes the setPointerCapture
+        // dependency that made the thin target fragile).
         setDrag(secondsAt(e.clientX));
-      }}
-      onPointerMove={(e) => {
-        if (drag === null) return;
-        setDrag(secondsAt(e.clientX));
-      }}
-      onPointerUp={(e) => {
-        if (drag === null) return;
-        const secs = secondsAt(e.clientX);
-        setDrag(null);
-        onSeek(secs);
+        const move = (ev: PointerEvent) => setDrag(secondsAt(ev.clientX));
+        const end = (ev: PointerEvent) => {
+          window.removeEventListener('pointermove', move);
+          window.removeEventListener('pointerup', end);
+          window.removeEventListener('pointercancel', abort);
+          const secs = secondsAt(ev.clientX);
+          setDrag(null);
+          onSeek(secs);
+        };
+        const abort = () => {
+          window.removeEventListener('pointermove', move);
+          window.removeEventListener('pointerup', end);
+          window.removeEventListener('pointercancel', abort);
+          setDrag(null);
+        };
+        window.addEventListener('pointermove', move);
+        window.addEventListener('pointerup', end);
+        window.addEventListener('pointercancel', abort);
       }}
       onKeyDown={(e) => {
         if (e.key === 'ArrowLeft') {
