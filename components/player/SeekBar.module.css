@@ -10,8 +10,26 @@
   outline-offset: 3px;
   border-radius: 2px;
 }
+/*
+ * The mini bar keeps a thin VISIBLE line but a tall GRAB area. The line sits at
+ * the top; the extra height overflows downward (the wrapper stays 2px in
+ * PlayerPanel), giving a draggable target without changing the panel's height.
+ */
 .mini {
-  height: 6px;
+  height: 12px;
+}
+.mini::before {
+  top: 0;
+  bottom: auto;
+  margin: 0;
+}
+.mini .fill {
+  top: 0;
+  bottom: auto;
+  margin: 0;
+}
+.mini .knob {
+  top: 2px;
 }
 .full {
   height: 14px;

@@ -103,7 +103,7 @@ export function LibraryScreen() {
           <>
             <FilterChips active={filter} onChange={setFilter} />
             {tagOptions.length > 0 ? (
-              <div className={browse.chips} role="group" aria-label="Filter by mood or genre">
+              <div className={`${browse.chips} ${styles.tagRow}`} role="group" aria-label="Filter by mood or genre">
                 {tagOptions.map((t) => {
                   const on = tag?.kind === t.kind && tag.slug === t.slug;
                   return (

@@ -20,3 +20,8 @@
   font: var(--t-row-artist);
   color: var(--dim);
 }
+
+/* Breathing room between the sort chips and the mood/genre filter row. */
+.tagRow {
+  margin-top: 10px;
+}

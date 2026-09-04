@@ -45,13 +45,32 @@ export function NowPlaying() {
   // Only trust stats that belong to the track on screen (avoids a stale flash).
   const shownStats = stats && stats.forId === currentId ? stats : null;
 
+  // Make the overlay a real history entry so the phone's Back button (and Esc,
+  // and the ⌄ arrow) closes it instead of leaving the app. Next.js patches
+  // history.pushState, so a direct push adds no entry — a URL *hash* does, and
+  // Back simply removes the hash (no navigation). All closes route through
+  // history.back(); the hashchange then clears `expanded`.
   useEffect(() => {
     if (!expanded) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setExpanded(false);
+    if (window.location.hash !== '#nowplaying') {
+      window.location.hash = 'nowplaying';
+    }
+    const onHashChange = () => {
+      if (window.location.hash !== '#nowplaying') setExpanded(false);
     };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') window.history.back();
+    };
+    window.addEventListener('hashchange', onHashChange);
     window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    return () => {
+      window.removeEventListener('hashchange', onHashChange);
+      window.removeEventListener('keydown', onKey);
+      // If we were closed some other way, strip the hash without a new entry.
+      if (window.location.hash === '#nowplaying') {
+        window.history.replaceState(null, '', window.location.pathname + window.location.search);
+      }
+    };
   }, [expanded, setExpanded]);
 
   if (!expanded || !current) return null;
@@ -61,7 +80,7 @@ export function NowPlaying() {
   return (
     <div className={styles.overlay} role="dialog" aria-label="Now playing">
       <header className={styles.top}>
-        <button type="button" className={styles.chevron} onClick={() => setExpanded(false)} aria-label="Close now playing">⌄</button>
+        <button type="button" className={styles.chevron} onClick={() => window.history.back()} aria-label="Close now playing">⌄</button>
         <span>Now Playing</span>
         <span aria-hidden="true" className={styles.spacer} />
       </header>

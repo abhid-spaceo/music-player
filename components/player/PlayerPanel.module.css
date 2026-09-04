@@ -14,8 +14,12 @@
   z-index: 2;
 }
 
-/* The seek line rides the very top edge of the bar, full bleed. */
-.progress { height: 2px; background: var(--track); cursor: pointer; }
+/*
+ * The seek line rides the very top edge of the bar, full bleed. The wrapper
+ * stays 2px so the panel height is unchanged; the SeekBar inside is taller and
+ * overflows downward as a grab area, lifted above the body so it catches drags.
+ */
+.progress { height: 2px; cursor: pointer; position: relative; z-index: 2; }
 .fill { display: block; height: 2px; width: var(--pos); background: var(--signal); }
 
 /*
