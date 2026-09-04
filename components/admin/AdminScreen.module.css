@@ -18,7 +18,13 @@
   border-color: var(--bone);
 }
 
-.panel { padding: 0 var(--gutter); }
+.panel {
+  padding: 0 var(--gutter);
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
 .label {
   display: block;
   margin-bottom: 6px;
@@ -84,7 +90,15 @@
   flex-wrap: wrap;
   margin-bottom: 12px;
 }
-.tracks { list-style: none; margin: 0; padding: 0; }
+.tracks {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding-bottom: var(--scroll-spacer);
+}
 .trackRow {
   display: flex;
   align-items: flex-start;
