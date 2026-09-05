@@ -9,19 +9,10 @@ import {
   type Counts,
   type Outcome,
 } from '@/lib/admin/addLinks';
-import { QuotaWidget } from './glass/QuotaWidget';
 import { AddLinksResults } from './glass/AddLinksResults';
 import styles from './GlassAdminScreen.module.css';
 
 type Batch = { outcomes: Outcome[]; counts: Counts };
-
-/**
- * Sub-nav from the Admin mock. Only "Add links" is live in SP1; the rest render
- * but are inert — SP2 builds them as real glass pages and folds this rail into
- * the global sidebar. Kept here (not in the shared Sidebar) so SP1 does not
- * touch chrome used by every other screen.
- */
-const SUBNAV = ['Add links', 'Tracks', 'Playlist import', 'Users', 'Link health'] as const;
 
 /**
  * Glass variant of the Admin add-links screen (mock 3e): flat --bg-deep, no
@@ -71,26 +62,6 @@ export function GlassAdminScreen() {
 
   return (
     <div className={styles.screen}>
-      <nav className={styles.subnav} aria-label="Admin sections">
-        {SUBNAV.map((item) => {
-          const active = item === 'Add links';
-          return (
-            <button
-              key={item}
-              type="button"
-              className={styles.subnavItem}
-              data-active={active}
-              aria-current={active ? 'page' : undefined}
-              aria-disabled={active ? undefined : true}
-              title={active ? undefined : 'Coming in SP2'}
-              onClick={active ? undefined : (e) => e.preventDefault()}
-            >
-              {item}
-            </button>
-          );
-        })}
-      </nav>
-
       <header className={styles.header}>
         <div className={styles.headingBlock}>
           <h1 className={styles.title}>Add links</h1>
@@ -104,7 +75,6 @@ export function GlassAdminScreen() {
             <span className={styles.dot} aria-hidden="true" />
             ADMIN · {email ?? '—'}
           </span>
-          <QuotaWidget used={12} limit={10_000} />
         </div>
       </header>
 

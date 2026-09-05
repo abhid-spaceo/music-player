@@ -12,37 +12,6 @@
   overflow-y: auto;
 }
 
-/* Sub-nav — horizontal glass segmented control (SP1 stand-in for the mock's
-   vertical rail). Only "Add links" is active; others are visibly inert. */
-.subnav {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  padding: 4px;
-  border-radius: var(--r-pill);
-  background: var(--glass-1);
-  border: 1px solid var(--edge-1);
-  align-self: flex-start;
-}
-.subnavItem {
-  border: 0;
-  background: transparent;
-  color: var(--dim);
-  font: 500 12px var(--sans);
-  padding: 8px 16px;
-  border-radius: var(--r-pill);
-  cursor: pointer;
-}
-.subnavItem[data-active='true'] {
-  background: var(--glass-3);
-  color: var(--ink);
-  box-shadow: var(--lift-1);
-}
-.subnavItem[aria-disabled='true'] {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
 .header {
   display: flex;
   align-items: flex-start;

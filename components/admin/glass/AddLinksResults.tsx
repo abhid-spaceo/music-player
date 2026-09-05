@@ -1,4 +1,5 @@
 import { detail, LABEL, type Counts, type Outcome } from '@/lib/admin/addLinks';
+import { formatDuration } from '@/lib/format';
 import styles from './AddLinksResults.module.css';
 
 interface AddLinksResultsProps {
@@ -15,16 +16,26 @@ const BADGE: Record<Outcome['status'], string> = {
   'not-found': styles.notfound ?? '',
 };
 
-function primary(outcome: Outcome): string {
-  if (outcome.status === 'added') return outcome.title;
-  return outcome.input;
+/** Title column: the track title for an add, otherwise the outcome's reason. */
+function titleCell(outcome: Outcome): string {
+  return outcome.status === 'added' ? outcome.title : detail(outcome);
+}
+
+/** Channel column: the real channel for an add, otherwise the raw input. */
+function channelCell(outcome: Outcome): string {
+  return outcome.status === 'added' ? outcome.channelTitle : outcome.input;
+}
+
+/** Length column: the duration for an add, blank otherwise. */
+function lengthCell(outcome: Outcome): string {
+  return outcome.status === 'added' ? formatDuration(outcome.durationSec) : '';
 }
 
 /**
- * The "LAST BATCH" summary pills + the results table from the Admin mock. The
- * design's CHANNEL / LENGTH columns need per-track metadata the add endpoint
- * does not return yet (an SP2 backend item), so SP1 shows STATUS / TITLE /
- * DETAIL — the fields the response actually carries.
+ * The "LAST BATCH" summary pills + the results table from the Admin mock, with
+ * the STATUS / TITLE / CHANNEL / LENGTH columns. Added rows carry the real
+ * channel + duration (returned by the add endpoint); other rows put their reason
+ * in TITLE and the raw input in CHANNEL.
  */
 export function AddLinksResults({ outcomes, counts }: AddLinksResultsProps) {
   const inputs = outcomes.length;
@@ -55,7 +66,8 @@ export function AddLinksResults({ outcomes, counts }: AddLinksResultsProps) {
           <tr>
             <th scope="col">STATUS</th>
             <th scope="col">TITLE</th>
-            <th scope="col">DETAIL</th>
+            <th scope="col">CHANNEL</th>
+            <th scope="col">LENGTH</th>
           </tr>
         </thead>
         <tbody>
@@ -64,8 +76,9 @@ export function AddLinksResults({ outcomes, counts }: AddLinksResultsProps) {
               <td>
                 <span className={`${styles.badge} ${BADGE[outcome.status]}`}>{LABEL[outcome.status]}</span>
               </td>
-              <td className={`${styles.title} truncate`}>{primary(outcome)}</td>
-              <td className={`${styles.detail} truncate`}>{detail(outcome)}</td>
+              <td className={`${styles.title} truncate`}>{titleCell(outcome)}</td>
+              <td className={`${styles.detail} truncate`}>{channelCell(outcome)}</td>
+              <td className={styles.length}>{lengthCell(outcome)}</td>
             </tr>
           ))}
         </tbody>
