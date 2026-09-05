@@ -9,13 +9,19 @@ import { useCallback, useEffect, useState } from 'react';
  */
 let csrfToken: string | null = null;
 
-export type Session = { user: { id: string; role: 'admin' | 'listener' } | null };
+export type Session = { user: { id: string; role: 'admin' | 'listener'; email: string } | null };
 
 export async function getSession(): Promise<Session> {
   const res = await fetch('/api/session', { credentials: 'same-origin' });
   const body = (await res.json()) as { ok: boolean; data?: { user: Session['user']; csrfToken: string } };
   csrfToken = body.data?.csrfToken ?? null;
   return { user: body.data?.user ?? null };
+}
+
+/** Clears the session cookie server-side. Callers then navigate to /sign-in. */
+export async function logout(): Promise<void> {
+  await apiSend('/api/auth/logout', 'POST');
+  csrfToken = null;
 }
 
 export async function apiGet<T>(path: string): Promise<{ data: T; meta?: Record<string, unknown> }> {

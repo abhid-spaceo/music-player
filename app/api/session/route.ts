@@ -30,11 +30,11 @@ export async function GET() {
   const store = await cookies();
   const session = await readSession();
 
-  let user: { id: string; role: Role } | null = null;
+  let user: { id: string; role: Role; email: string } | null = null;
 
   if (session) {
-    const row = await queryOne<{ id: string; role: Role; session_version: number }>(
-      'SELECT id, role, session_version FROM users WHERE id = $1',
+    const row = await queryOne<{ id: string; role: Role; email: string; session_version: number }>(
+      'SELECT id, role, email, session_version FROM users WHERE id = $1',
       [session.uid],
     );
 
@@ -43,7 +43,7 @@ export async function GET() {
       // sign-out everywhere. Drop the cookie.
       store.set(SESSION_COOKIE, '', { ...sessionCookieOptions, maxAge: 0 });
     } else {
-      user = { id: row.id, role: row.role };
+      user = { id: row.id, role: row.role, email: row.email };
       // Re-issue if the role moved, so the signed cookie stops asserting a
       // privilege the database no longer grants.
       if (row.role !== session.role) {
