@@ -13,6 +13,23 @@
 }
 .input::placeholder { color: var(--dimmer); }
 
+/* Glass theme: frosted create field, gradient add button, row hover fill. The
+   full artwork-tile grid (design 3b) needs playlist cover art the API doesn't
+   provide yet, so it's a later pass; this keeps Playlists in the glass language. */
+:global([data-theme='glass']) .input {
+  border-radius: var(--r-pill);
+  border-color: var(--edge-1);
+  background: var(--glass-1);
+}
+:global([data-theme='glass']) .create .del {
+  border-radius: var(--r-pill);
+  background: var(--play-bg);
+  color: var(--play-fg);
+}
+:global([data-theme='glass']) .row:hover {
+  background: var(--glass-1);
+}
+
 .row {
   position: relative;
   display: flex;
