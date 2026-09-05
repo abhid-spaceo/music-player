@@ -171,3 +171,21 @@
 .empty {
   opacity: 0.6;
 }
+
+/* ---- Glass theme -------------------------------------------------------- *
+ * This overlay hardcodes its own colours (it predates the token system), so it
+ * needs explicit glass rules rather than inheriting the token swap. */
+:global([data-theme='glass']) .overlay {
+  background:
+    radial-gradient(85% 40% at 50% 0%, rgba(138, 92, 255, 0.35), transparent 60%),
+    radial-gradient(95% 45% at 50% 100%, rgba(255, 79, 163, 0.24), transparent 62%),
+    var(--base);
+  color: var(--bone);
+}
+:global([data-theme='glass']) .art {
+  border-radius: 22px;
+}
+:global([data-theme='glass']) .play {
+  background: var(--play-bg);
+  color: var(--play-fg);
+}

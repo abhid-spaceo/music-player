@@ -8,6 +8,7 @@ import { PlayerPanel } from '@/components/player/PlayerPanel';
 import { NowPlaying } from '@/components/player/NowPlaying';
 import { ServiceWorkerRegistrar } from './ServiceWorkerRegistrar';
 import { usePlayer } from '@/components/player/PlayerProvider';
+import { useArtGlow } from '@/lib/theme/useArtGlow';
 import { Sidebar } from './Sidebar';
 import { TabBar } from './TabBar';
 import styles from './AppShell.module.css';
@@ -20,6 +21,9 @@ import styles from './AppShell.module.css';
 export function AppShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const { current } = usePlayer();
+  // Drives the Glass theme's ambient glow from the current track's artwork.
+  // A no-op in the current theme, where --art-glow is unused.
+  useArtGlow(current?.thumbnailUrl);
   const [checked, setChecked] = useState(false);
   const [role, setRole] = useState<'admin' | 'listener' | null>(null);
 
@@ -55,6 +59,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       className={styles.shell}
       style={{ '--player-h': `${playerHeight}px` } as React.CSSProperties}
     >
+      <div className={styles.ambient} aria-hidden="true" />
       <Sidebar role={role} />
       <div className={styles.main}>{checked ? children : null}</div>
       <PlayerPanel />

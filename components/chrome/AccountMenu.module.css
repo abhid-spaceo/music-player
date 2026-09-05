@@ -50,6 +50,46 @@
   color: var(--bone);
 }
 
+/* Design switch (Glass / Current). Sits above sign-out. */
+.section {
+  margin: 0 0 8px;
+  padding: 2px 4px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border-bottom: 1px solid var(--rule);
+}
+.sectionLabel {
+  font: var(--t-meta);
+  letter-spacing: var(--ls-meta);
+  color: var(--dim);
+}
+.segmented {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  padding: 3px;
+  border: 1px solid var(--outline);
+  border-radius: 999px;
+}
+.segment {
+  padding: 7px 10px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--dim);
+  font: var(--t-chip);
+  letter-spacing: var(--ls-tab);
+  cursor: pointer;
+}
+.segment:hover {
+  color: var(--bone);
+}
+.segment[data-active='true'] {
+  background: var(--play-bg);
+  color: var(--play-fg);
+}
+
 .signout {
   width: 100%;
   padding: 9px 12px;

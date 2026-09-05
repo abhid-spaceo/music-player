@@ -3,6 +3,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { getSession, logout } from '@/lib/api/client';
+import {
+  DEFAULT_THEME,
+  normalizeTheme,
+  serializeThemeCookie,
+  type ThemeName,
+} from '@/lib/theme/theme';
 import styles from './AccountMenu.module.css';
 
 /**
@@ -14,8 +20,27 @@ export function AccountMenu() {
   const [open, setOpen] = useState(false);
   const [email, setEmail] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  // Seeded from the <html data-theme> the server already set, so the menu shows
+  // the true current choice. Lazy (not an effect) to avoid a cascading render;
+  // safe because the theme UI only renders once the menu is opened, after
+  // hydration. Falls back to the default during SSR where document is absent.
+  const [theme, setTheme] = useState<ThemeName>(() =>
+    typeof document === 'undefined'
+      ? DEFAULT_THEME
+      : normalizeTheme(document.documentElement.dataset.theme),
+  );
   const rootRef = useRef<HTMLDivElement | null>(null);
   const router = useRouter();
+
+  function chooseTheme(next: ThemeName) {
+    if (next === theme) return;
+    // 1) persist for future loads, 2) re-skin instantly with no reload,
+    // 3) refresh so any server-rendered output agrees with the cookie.
+    document.cookie = serializeThemeCookie(next);
+    document.documentElement.dataset.theme = next;
+    setTheme(next);
+    router.refresh();
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -86,6 +111,33 @@ export function AccountMenu() {
               <span className={`${styles.email} truncate`}>{email}</span>
             </p>
           ) : null}
+
+          <div className={styles.section}>
+            <span className={styles.sectionLabel}>DESIGN</span>
+            <div className={styles.segmented} role="group" aria-label="Design">
+              <button
+                type="button"
+                className={styles.segment}
+                role="menuitemradio"
+                aria-checked={theme === 'glass'}
+                data-active={theme === 'glass'}
+                onClick={() => chooseTheme('glass')}
+              >
+                Glass
+              </button>
+              <button
+                type="button"
+                className={styles.segment}
+                role="menuitemradio"
+                aria-checked={theme === 'current'}
+                data-active={theme === 'current'}
+                onClick={() => chooseTheme('current')}
+              >
+                Current
+              </button>
+            </div>
+          </div>
+
           <button
             type="button"
             className={styles.signout}

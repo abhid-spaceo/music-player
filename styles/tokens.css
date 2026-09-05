@@ -73,4 +73,60 @@
   --ls-column-label: 0.14em;
   --ls-tab: 0.06em;
   --ls-dl-pill: 0.1em;
+
+  /* ---- Theming support (see [data-theme='glass'] below) --------------- *
+   * These exist so the Glass theme can turn effects on without any other
+   * theme being affected. In the current (default) theme they are inert:
+   * no blur, no glow, and the play button stays the flat --bone fill. */
+  --glass-blur: 0px; /* backdrop blur on fixed chrome; 0 = off */
+  --ambient-blur: 0px; /* reserved for the ambient glow layer */
+  --art-glow: transparent; /* set at runtime from album art (glass only) */
+  --ambient-grad: transparent; /* preset glow behind the shell (glass only) */
+  --play-bg: var(--bone); /* primary play/pause fill */
+  --play-fg: var(--base); /* primary play/pause glyph */
+}
+
+/*
+ * GLASS THEME. Applied by app/layout.tsx as <html data-theme="glass"> when the
+ * mp_theme cookie is "glass" (the default for a new visitor). It overrides the
+ * SAME token names the whole app already reads, so most screens re-skin with no
+ * component change. Effects that are not a token swap (backdrop blur, gradient
+ * fills, the ambient glow) live in each component's CSS, guarded by
+ * :global([data-theme='glass']). Values are from the finalized Glass Spec.
+ */
+[data-theme='glass'] {
+  /* Surfaces and text — deep purple-black substrate, lavender-tinted text. */
+  --base: #0d0b14;
+  --raised: rgba(255, 255, 255, 0.06);
+  --bone: #f6f4ff;
+  --dim: rgba(246, 244, 255, 0.72);
+  --dimmer: rgba(246, 244, 255, 0.5);
+  --signal: #ff4fa3; /* playing state + progress. Glass's accent is pink. */
+
+  /* Lines — brighter hairlines read correctly on the translucent surfaces. */
+  --divider: rgba(246, 244, 255, 0.08);
+  --hairline: rgba(255, 255, 255, 0.12);
+  --rule: rgba(255, 255, 255, 0.14);
+  --outline: rgba(255, 255, 255, 0.16);
+
+  /* Literal alphas. */
+  --track: rgba(255, 255, 255, 0.12);
+  --scrim: rgba(5, 4, 10, 0.62);
+  --playing-wash: rgba(255, 79, 163, 0.12);
+
+  /* Geometry — soft corners everywhere var(--radius) is used. Per-component
+     refinement (the 2/6/22 scale in the spec) is a later pass. */
+  --radius: 10px;
+
+  /* Effects — turned on for glass only. */
+  --glass-blur: 18px;
+  --ambient-blur: 60px;
+  --ambient-grad: radial-gradient(
+      70% 55% at 50% -6%,
+      rgba(138, 92, 255, 0.45),
+      transparent 60%
+    ),
+    radial-gradient(90% 60% at 100% 105%, rgba(255, 79, 163, 0.28), transparent 65%);
+  --play-bg: linear-gradient(148deg, #8a5cff 0%, #ff4fa3 54%, #ffb86b 100%);
+  --play-fg: #1a0b2e;
 }
