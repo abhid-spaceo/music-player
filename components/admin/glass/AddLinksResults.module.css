@@ -97,3 +97,10 @@
   color: var(--dim);
   max-width: 360px;
 }
+.length {
+  color: var(--dim);
+  font: 400 12px var(--mono);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  text-align: right;
+}

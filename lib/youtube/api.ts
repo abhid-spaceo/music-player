@@ -143,11 +143,17 @@ export type FetchOptions = {
   /** Region-blocking is per viewer, so this must be where the owner watches. */
   region: string;
   fetchImpl?: typeof fetch;
+  /**
+   * Called with the quota units this fetch spent (its call count) so a caller
+   * can record usage. A callback, so this module never imports the database and
+   * stays purely testable.
+   */
+  onQuota?: (units: number) => void;
 };
 
 export async function fetchVideoMetadata(
   ids: readonly string[],
-  { apiKey, region, fetchImpl = fetch }: FetchOptions,
+  { apiKey, region, fetchImpl = fetch, onQuota }: FetchOptions,
 ): Promise<FetchResult> {
   const unique = [...new Set(ids)];
   if (unique.length === 0) return { found: [], missing: [], callCount: 0 };
@@ -206,6 +212,7 @@ export async function fetchVideoMetadata(
     }
   }
 
+  onQuota?.(callCount);
   return { found, missing: unique.filter((id) => !seen.has(id)), callCount };
 }
 
@@ -228,6 +235,8 @@ export const MAX_PLAYLIST_ITEMS = 500;
 export type PlaylistFetchOptions = {
   apiKey: string;
   fetchImpl?: typeof fetch;
+  /** Quota units spent (call count), for usage recording. See FetchOptions. */
+  onQuota?: (units: number) => void;
 };
 
 export type PlaylistFetchResult = {
@@ -255,7 +264,7 @@ const UNPLAYABLE_TITLES = new Set(['Deleted video', 'Private video']);
 
 export async function fetchPlaylistVideoIds(
   playlistId: string,
-  { apiKey, fetchImpl = fetch }: PlaylistFetchOptions,
+  { apiKey, fetchImpl = fetch, onQuota }: PlaylistFetchOptions,
 ): Promise<PlaylistFetchResult> {
   if (!apiKey) throw new YouTubeApiError('YOUTUBE_API_KEY is not set', 500);
 
@@ -324,5 +333,6 @@ export async function fetchPlaylistVideoIds(
     pageToken = truncated ? undefined : payload.nextPageToken;
   } while (pageToken);
 
+  onQuota?.(callCount);
   return { videoIds, items, skipped, truncated, callCount };
 }

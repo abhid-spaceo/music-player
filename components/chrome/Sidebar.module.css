@@ -36,5 +36,40 @@
     -webkit-backdrop-filter: blur(var(--glass-blur));
     backdrop-filter: blur(var(--glass-blur));
     z-index: 1;
+    overflow-y: auto;
+    scrollbar-width: none;
+  }
+
+  /* Admin sub-nav + quota (glass admin routes only — see Sidebar.tsx guard). */
+  .adminSection {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin-top: 18px;
+    padding-top: 14px;
+    border-top: 1px solid var(--edge-1);
+  }
+  .sectionLabel {
+    font: 700 10px var(--mono);
+    letter-spacing: 0.16em;
+    color: var(--dim);
+    padding: 0 10px 8px;
+  }
+  .subLink {
+    display: flex;
+    align-items: center;
+    min-height: 38px;
+    padding: 0 10px;
+    border-radius: var(--r-9);
+    color: var(--dim);
+    font: 500 13px var(--sans);
+  }
+  .subLink[aria-current='page'] {
+    background: var(--glass-3);
+    color: var(--ink);
+  }
+  .quota {
+    margin-top: auto;
+    padding-top: 16px;
   }
 }

@@ -6,7 +6,14 @@
 
 /** Mirrors the union returned by POST /api/admin/tracks, one entry per input. */
 export type Outcome =
-  | { input: string; status: 'added'; videoId: string; title: string }
+  | {
+      input: string;
+      status: 'added';
+      videoId: string;
+      title: string;
+      channelTitle: string;
+      durationSec: number;
+    }
   | {
       input: string;
       status: 'playlist';

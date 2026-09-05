@@ -5,6 +5,7 @@ import { requireAdmin } from '@/lib/auth/guard';
 import { query } from '@/lib/db/client';
 import { fetchPlaylistVideoIds, YouTubeApiError, YouTubeQuotaError } from '@/lib/youtube/api';
 import { youtubeApiKey } from '@/lib/youtube/config';
+import { recordQuotaFireAndForget } from '@/lib/youtube/quota';
 import { PLAYLIST_FAILURE_MESSAGES, parsePlaylistId } from '@/lib/youtube/parse-url';
 
 /**
@@ -32,7 +33,10 @@ export async function POST(request: Request) {
 
     let list;
     try {
-      list = await fetchPlaylistVideoIds(asPlaylist.playlistId, { apiKey: youtubeApiKey() });
+      list = await fetchPlaylistVideoIds(asPlaylist.playlistId, {
+        apiKey: youtubeApiKey(),
+        onQuota: recordQuotaFireAndForget,
+      });
     } catch (err) {
       if (err instanceof YouTubeQuotaError) return fail(err.message, 429);
       if (err instanceof YouTubeApiError) return fail(err.message, err.status);

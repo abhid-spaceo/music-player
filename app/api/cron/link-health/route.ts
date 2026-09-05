@@ -2,6 +2,7 @@ import { fail, handleError, ok } from '@/lib/api/respond';
 import { query } from '@/lib/db/client';
 import { MAX_IDS_PER_CALL, fetchVideoMetadata, YouTubeApiError, YouTubeQuotaError } from '@/lib/youtube/api';
 import { youtubeApiKey, youtubeRegion } from '@/lib/youtube/config';
+import { recordQuotaFireAndForget } from '@/lib/youtube/quota';
 
 /**
  * The link-health sweep. A library of links rots: videos are removed, made
@@ -42,7 +43,7 @@ export async function GET(request: Request) {
     try {
       result = await fetchVideoMetadata(
         stale.map((r) => r.youtube_id),
-        { apiKey: youtubeApiKey(), region: youtubeRegion() },
+        { apiKey: youtubeApiKey(), region: youtubeRegion(), onQuota: recordQuotaFireAndForget },
       );
     } catch (err) {
       // Fail loudly. A silent empty result would look like the whole library

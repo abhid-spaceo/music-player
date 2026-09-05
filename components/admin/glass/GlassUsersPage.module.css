@@ -1,0 +1,136 @@
+/* Glass Users admin — CRUD over /api/admin/users. Rendered only under the glass
+ * theme (below the route's own <h1> "Users"), so no page title lives here. */
+
+.wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+}
+
+/* Create form. Fields sit one glass level down as a plain darker inset fill —
+   the same treatment as the sign-in inputs — so alphas don't compound. */
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+}
+.input {
+  min-width: 0;
+  padding: 12px 14px;
+  border-radius: var(--r-14);
+  background: rgba(0, 0, 0, 0.22);
+  border: 1px solid var(--edge-1);
+  color: var(--ink);
+  font: 400 14px var(--sans);
+}
+.input::placeholder {
+  color: var(--dimmer);
+}
+.input:focus {
+  outline: none;
+  border-color: var(--edge-hi);
+}
+
+/* Gradient primary, matching the sign-in submit and add-links CTA. */
+.submit {
+  align-self: flex-start;
+  padding: 11px 20px;
+  border-radius: var(--r-pill);
+  border: 0;
+  background: var(--play-bg);
+  color: var(--play-fg);
+  font: 700 13px var(--sans);
+  cursor: pointer;
+  box-shadow: var(--lift-1);
+}
+.submit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.problem {
+  margin: 0;
+  color: #ff8fb0;
+  font-size: 13px;
+}
+.state {
+  margin: 0;
+  padding: 20px;
+  color: var(--dim);
+  font-size: 14px;
+  border: 1px solid var(--edge-1);
+  border-radius: var(--r-14);
+}
+
+/* Data table — mono column headers, --edge-1 outer border, --divider rows.
+   Same treatment as the add-links results table. */
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  border: 1px solid var(--edge-1);
+  border-radius: var(--r-14);
+  overflow: hidden;
+}
+.table thead th {
+  text-align: left;
+  font: 700 10px var(--mono);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--dim);
+  padding: 12px 16px;
+  background: var(--glass-1);
+  border-bottom: 1px solid var(--edge-1);
+}
+.table tbody td {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--divider);
+  vertical-align: middle;
+  color: var(--ink);
+  font-size: 13px;
+}
+.table tbody tr:last-child td {
+  border-bottom: 0;
+}
+.email {
+  font-weight: 600;
+}
+.when {
+  color: var(--dim);
+  font: 400 12px var(--mono);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* Role as a small mono pill. */
+.badge {
+  font: 600 10px var(--mono);
+  letter-spacing: 0.08em;
+  padding: 3px 8px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--edge-1);
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.actions {
+  text-align: right;
+  white-space: nowrap;
+}
+.remove {
+  padding: 6px 12px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--edge-2);
+  background: transparent;
+  color: var(--dim);
+  font: 500 12px var(--sans);
+  cursor: pointer;
+}
+.remove:hover {
+  color: var(--ink);
+}

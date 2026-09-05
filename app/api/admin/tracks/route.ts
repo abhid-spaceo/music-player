@@ -11,6 +11,7 @@ import {
   type VideoMetadata,
 } from '@/lib/youtube/api';
 import { youtubeApiKey, youtubeRegion } from '@/lib/youtube/config';
+import { recordQuotaFireAndForget } from '@/lib/youtube/quota';
 import {
   PARSE_FAILURE_MESSAGES,
   PLAYLIST_FAILURE_MESSAGES,
@@ -27,7 +28,14 @@ const Body = z
   .refine((b) => b.urls?.length || b.text, { message: 'Provide urls or text' });
 
 type Outcome =
-  | { input: string; status: 'added'; videoId: string; title: string }
+  | {
+      input: string;
+      status: 'added';
+      videoId: string;
+      title: string;
+      channelTitle: string;
+      durationSec: number;
+    }
   | {
       input: string;
       status: 'playlist';
@@ -73,6 +81,7 @@ export async function POST(request: Request) {
         try {
           const list = await fetchPlaylistVideoIds(asPlaylist.playlistId, {
             apiKey: youtubeApiKey(),
+            onQuota: recordQuotaFireAndForget,
           });
           apiCalls += list.callCount;
           outcomes.push({
@@ -149,6 +158,7 @@ export async function POST(request: Request) {
         const result = await fetchVideoMetadata(toFetch, {
           apiKey: youtubeApiKey(),
           region: youtubeRegion(),
+          onQuota: recordQuotaFireAndForget,
         });
         found = result.found;
         missing = result.missing;
@@ -185,6 +195,8 @@ export async function POST(request: Request) {
           status: 'added',
           videoId: meta.youtubeId,
           title: meta.title,
+          channelTitle: meta.channelTitle,
+          durationSec: meta.durationSec,
         });
       }
 

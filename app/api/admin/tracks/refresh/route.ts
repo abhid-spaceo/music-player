@@ -5,6 +5,7 @@ import { requireAdmin } from '@/lib/auth/guard';
 import { query } from '@/lib/db/client';
 import { MAX_IDS_PER_CALL, fetchVideoMetadata, YouTubeApiError, YouTubeQuotaError } from '@/lib/youtube/api';
 import { youtubeApiKey, youtubeRegion } from '@/lib/youtube/config';
+import { recordQuotaFireAndForget } from '@/lib/youtube/quota';
 
 /**
  * A deliberate refresh. Availability and descriptive metadata come back in the
@@ -35,6 +36,7 @@ export async function POST(request: Request) {
       result = await fetchVideoMetadata(ids, {
         apiKey: youtubeApiKey(),
         region: youtubeRegion(),
+        onQuota: recordQuotaFireAndForget,
       });
     } catch (err) {
       if (err instanceof YouTubeQuotaError) return fail(err.message, 429);
