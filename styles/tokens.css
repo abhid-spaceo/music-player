@@ -84,6 +84,34 @@
   --ambient-grad: transparent; /* preset glow behind the shell (glass only) */
   --play-bg: var(--bone); /* primary play/pause fill */
   --play-fg: var(--base); /* primary play/pause glyph */
+
+  /*
+   * Glass-only tokens, given inert defaults here so a Glass component that reads
+   * them still renders sanely under the Current theme (they fold back to the
+   * flat equivalents). Glass overrides them for real in the block below.
+   */
+  --bg-void: var(--base);
+  --bg-deep: var(--base);
+  --glass-1: var(--raised);
+  --glass-2: var(--raised);
+  --glass-3: var(--raised);
+  --panel-blur-1: 0px;
+  --panel-blur-2: 0px;
+  --panel-blur-3: 0px;
+  --edge-1: var(--hairline);
+  --edge-2: var(--outline);
+  --edge-hi: var(--outline);
+  --accent: var(--signal);
+  --accent-2: var(--signal);
+  --serif: var(--sans);
+  --lift-1: none;
+  --lift-2: none;
+  --lift-3: none;
+  --r-9: var(--radius);
+  --r-14: var(--radius);
+  --r-20: var(--radius);
+  --r-26: var(--radius);
+  --r-pill: var(--radius);
 }
 
 /*
@@ -95,31 +123,51 @@
  * :global([data-theme='glass']). Values are from the finalized Glass Spec.
  */
 [data-theme='glass'] {
-  /* Surfaces and text — deep purple-black substrate, lavender-tinted text. */
+  /* Substrate — deep purple-black. --base is the page; --bg-deep is the flat
+     data surface (Admin); --bg-void is the darkest backdrop behind the bloom. */
   --base: #0d0b14;
-  --raised: rgba(255, 255, 255, 0.06);
+  --bg-void: #08070c;
+  --bg-deep: #0d0b14;
+
+  /* Glass surfaces (fill + backdrop-blur). NEVER nest two glass levels directly
+     — the alphas compound (design rule). */
+  --glass-1: rgba(255, 255, 255, 0.07);
+  --glass-2: rgba(255, 255, 255, 0.1);
+  --glass-3: rgba(255, 255, 255, 0.16);
+  --raised: var(--glass-2);
+  --panel-blur-1: 24px;
+  --panel-blur-2: 28px;
+  --panel-blur-3: 26px;
+  --glass-blur: 18px; /* fixed chrome */
+
+  /* Text / ink — lavender-tinted. --dimmer (=ink-3) is permitted on glass, never
+     directly on the bloom (it would drop below AA there). */
   --bone: #f6f4ff;
+  --ink: #f6f4ff;
   --dim: rgba(246, 244, 255, 0.72);
-  --dimmer: rgba(246, 244, 255, 0.5);
-  --signal: #ff4fa3; /* playing state + progress. Glass's accent is pink. */
+  --dimmer: rgba(246, 244, 255, 0.62);
 
-  /* Lines — brighter hairlines read correctly on the translucent surfaces. */
-  --divider: rgba(246, 244, 255, 0.08);
-  --hairline: rgba(255, 255, 255, 0.12);
+  /* Borders — 1px, inset-lit. */
+  --edge-1: rgba(255, 255, 255, 0.12);
+  --edge-2: rgba(255, 255, 255, 0.16);
+  --edge-hi: rgba(255, 255, 255, 0.22);
+  --divider: var(--edge-1);
+  --hairline: var(--edge-1);
   --rule: rgba(255, 255, 255, 0.14);
-  --outline: rgba(255, 255, 255, 0.16);
+  --outline: var(--edge-2);
 
-  /* Literal alphas. */
+  /* Accent — art-derived at runtime; these are the fallback pair. */
+  --accent: #c4b5fd;
+  --accent-2: #ff8fc3;
+  --signal: var(--accent-2); /* playing state + progress */
+  --playing-wash: rgba(255, 143, 195, 0.12);
   --track: rgba(255, 255, 255, 0.12);
   --scrim: rgba(5, 4, 10, 0.62);
-  --playing-wash: rgba(255, 79, 163, 0.12);
 
-  /* Geometry — soft corners everywhere var(--radius) is used. Per-component
-     refinement (the 2/6/22 scale in the spec) is a later pass. */
-  --radius: 10px;
-
-  /* Effects — turned on for glass only. */
-  --glass-blur: 18px;
+  /* Shadows + ambient bloom. */
+  --lift-1: 0 14px 34px rgba(0, 0, 0, 0.4);
+  --lift-2: 0 24px 60px rgba(0, 0, 0, 0.5);
+  --lift-3: 0 34px 80px rgba(0, 0, 0, 0.55);
   --ambient-blur: 60px;
   --ambient-grad: radial-gradient(
       70% 55% at 50% -6%,
@@ -127,6 +175,25 @@
       transparent 60%
     ),
     radial-gradient(90% 60% at 100% 105%, rgba(255, 79, 163, 0.28), transparent 65%);
+
+  /* Radius scale (replaces the wrong single 10px). --radius keeps controls at a
+     sensible glass default for components that read it directly. */
+  --r-9: 9px;
+  --r-14: 14px;
+  --r-20: 20px;
+  --r-26: 26px;
+  --r-pill: 999px;
+  --radius: var(--r-14);
+
+  /* Type — Manrope UI, JetBrains Mono numerals/labels, Instrument Serif display. */
+  --sans: 'Manrope Variable', 'Manrope', ui-sans-serif, system-ui, sans-serif;
+  --mono: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+  --serif: 'Instrument Serif', Georgia, serif;
+  --t-screen-title: 700 27px/1.1 var(--sans);
+  --t-row-title: 600 13.5px/1.25 var(--sans);
+  --t-row-artist: 400 12px/1.3 var(--sans);
+
+  /* Primary play/pause gradient. */
   --play-bg: linear-gradient(148deg, #8a5cff 0%, #ff4fa3 54%, #ffb86b 100%);
   --play-fg: #1a0b2e;
 }

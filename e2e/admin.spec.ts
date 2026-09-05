@@ -4,12 +4,17 @@ const ADMIN_EMAIL = process.env.SEED_ADMIN_EMAIL ?? 'admin@example.com';
 const ADMIN_PASSWORD = process.env.SEED_ADMIN_PASSWORD ?? 'admin-password-1234';
 const LISTENER_EMAIL = process.env.SEED_LISTENER_EMAIL ?? 'listener@example.com';
 const LISTENER_PASSWORD = process.env.SEED_LISTENER_PASSWORD ?? 'listener-password-1234';
+const BASE_URL = process.env.BASE_URL ?? 'http://127.0.0.1:3100';
 
 async function signIn(
   page: import('@playwright/test').Page,
   email: string,
   password: string,
 ) {
+  // These tests cover the CURRENT admin's full feature set (tabs, Tracks table,
+  // dead-link check). Glass is the default theme but only implements Add-links so
+  // far (Tracks etc. arrive in SP2), so pin this file to Current explicitly.
+  await page.context().addCookies([{ name: 'mp_theme', value: 'current', url: BASE_URL }]);
   await page.goto('/sign-in');
   await page.getByLabel('EMAIL').fill(email);
   await page.getByLabel('PASSWORD').fill(password);

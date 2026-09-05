@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import { cookies } from 'next/headers';
 import { THEME_COOKIE, normalizeTheme } from '@/lib/theme/theme';
+import { ThemeProvider } from '@/lib/theme/ThemeProvider';
 
 // Self-hosted fonts. `wght.css` is the upright weight axis only — one variable
 // woff2 covers 400/500/600 with no italic or width axis shipped. Nothing is
@@ -8,6 +9,14 @@ import { THEME_COOKIE, normalizeTheme } from '@/lib/theme/theme';
 import '@fontsource-variable/instrument-sans/wght.css';
 import '@fontsource/ibm-plex-mono/400.css';
 import '@fontsource/ibm-plex-mono/500.css';
+
+// Glass theme faces. Only referenced by [data-theme='glass'] type tokens, so the
+// Current theme is unaffected. Self-hosted (no runtime fetch), matching the above.
+import '@fontsource-variable/manrope/wght.css'; // UI — variable 400–700 upright
+import '@fontsource/instrument-serif/400.css'; // display/marketing voice
+import '@fontsource/jetbrains-mono/400.css'; // numerals + labels
+import '@fontsource/jetbrains-mono/500.css';
+import '@fontsource/jetbrains-mono/600.css';
 
 import '@/styles/tokens.css';
 import '@/styles/base.css';
@@ -40,7 +49,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 
   return (
     <html lang="en" data-theme={theme} style={{ colorScheme: 'dark' }}>
-      <body>{children}</body>
+      <body>
+        <ThemeProvider theme={theme}>{children}</ThemeProvider>
+      </body>
     </html>
   );
 }
