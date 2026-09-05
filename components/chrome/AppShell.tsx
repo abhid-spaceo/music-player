@@ -6,9 +6,11 @@ import { getSession } from '@/lib/api/client';
 import { KeyboardShortcuts } from '@/components/player/KeyboardShortcuts';
 import { PlayerPanel } from '@/components/player/PlayerPanel';
 import { NowPlaying } from '@/components/player/NowPlaying';
+import { GlassNowPlaying } from '@/components/player/GlassNowPlaying';
 import { ServiceWorkerRegistrar } from './ServiceWorkerRegistrar';
 import { usePlayer } from '@/components/player/PlayerProvider';
 import { useArtGlow } from '@/lib/theme/useArtGlow';
+import { useTheme } from '@/lib/theme/ThemeProvider';
 import { Sidebar } from './Sidebar';
 import { TabBar } from './TabBar';
 import styles from './AppShell.module.css';
@@ -20,6 +22,7 @@ import styles from './AppShell.module.css';
  */
 export function AppShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
+  const theme = useTheme();
   const { current } = usePlayer();
   // Drives the Glass theme's ambient glow from the current track's artwork.
   // A no-op in the current theme, where --art-glow is unused.
@@ -63,7 +66,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <Sidebar role={role} />
       <div className={styles.main}>{checked ? children : null}</div>
       <PlayerPanel />
-      <NowPlaying />
+      {theme === 'glass' ? <GlassNowPlaying /> : <NowPlaying />}
       <TabBar role={role} />
       <KeyboardShortcuts />
       <ServiceWorkerRegistrar />
