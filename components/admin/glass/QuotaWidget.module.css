@@ -1,0 +1,44 @@
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px 16px;
+  border-radius: var(--r-14);
+  background: var(--glass-1);
+  border: 1px solid var(--edge-1);
+  min-width: 200px;
+}
+.label {
+  font: 700 10px var(--mono);
+  letter-spacing: 0.16em;
+  color: var(--dim);
+}
+.value {
+  margin: 0;
+  color: var(--ink);
+}
+.value strong {
+  font: 700 22px var(--mono);
+  font-variant-numeric: tabular-nums;
+}
+.of {
+  color: var(--dim);
+  font: 400 13px var(--mono);
+}
+.bar {
+  height: 4px;
+  border-radius: var(--r-pill);
+  background: var(--track);
+  overflow: hidden;
+}
+.fill {
+  display: block;
+  height: 100%;
+  border-radius: var(--r-pill);
+  background: var(--play-bg);
+}
+.resets {
+  font: 400 10px var(--mono);
+  letter-spacing: 0.08em;
+  color: var(--dimmer);
+}
