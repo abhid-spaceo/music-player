@@ -3,10 +3,17 @@
 import { useState } from 'react';
 import { ScreenHeader } from '@/components/chrome/ScreenHeader';
 import { AddTracksPanel } from './AddTracksPanel';
+import { PlaylistImportPanel } from './PlaylistImportPanel';
 import { TrackAdminPanel } from './TrackAdminPanel';
 import styles from './AdminScreen.module.css';
 
-type Tab = 'add' | 'tracks';
+type Tab = 'add' | 'playlist' | 'tracks';
+
+const META: Record<Tab, string> = {
+  add: 'ADD LINKS',
+  playlist: 'PLAYLIST',
+  tracks: 'TRACKS',
+};
 
 export function AdminScreen() {
   const [tab, setTab] = useState<Tab>('add');
@@ -15,7 +22,7 @@ export function AdminScreen() {
     <>
       <ScreenHeader
         title="Admin"
-        meta={tab === 'add' ? 'ADD LINKS' : 'TRACKS'}
+        meta={META[tab]}
         below={
           <div className={styles.tabs} role="tablist" aria-label="Admin sections">
             <button
@@ -30,6 +37,15 @@ export function AdminScreen() {
             <button
               type="button"
               role="tab"
+              aria-selected={tab === 'playlist'}
+              className={styles.tab}
+              onClick={() => setTab('playlist')}
+            >
+              PLAYLIST
+            </button>
+            <button
+              type="button"
+              role="tab"
               aria-selected={tab === 'tracks'}
               className={styles.tab}
               onClick={() => setTab('tracks')}
@@ -39,7 +55,13 @@ export function AdminScreen() {
           </div>
         }
       />
-      {tab === 'add' ? <AddTracksPanel /> : <TrackAdminPanel />}
+      {tab === 'add' ? (
+        <AddTracksPanel />
+      ) : tab === 'playlist' ? (
+        <PlaylistImportPanel />
+      ) : (
+        <TrackAdminPanel />
+      )}
     </>
   );
 }

@@ -232,6 +232,12 @@ export type PlaylistFetchOptions = {
 
 export type PlaylistFetchResult = {
   videoIds: string[];
+  /**
+   * The same videos as `videoIds`, each paired with the title YouTube already
+   * returns on the playlist call — so a preview can list titles without
+   * spending extra quota on a videos.list lookup.
+   */
+  items: { videoId: string; title: string }[];
   /** Entries YouTube reports as deleted or private — they carry no usable id. */
   skipped: number;
   /** True when the playlist is longer than MAX_PLAYLIST_ITEMS. */
@@ -254,6 +260,7 @@ export async function fetchPlaylistVideoIds(
   if (!apiKey) throw new YouTubeApiError('YOUTUBE_API_KEY is not set', 500);
 
   const videoIds: string[] = [];
+  const items: { videoId: string; title: string }[] = [];
   const seen = new Set<string>();
   let skipped = 0;
   let callCount = 0;
@@ -311,10 +318,11 @@ export async function fetchPlaylistVideoIds(
       }
       seen.add(id);
       videoIds.push(id);
+      items.push({ videoId: id, title });
     }
 
     pageToken = truncated ? undefined : payload.nextPageToken;
   } while (pageToken);
 
-  return { videoIds, skipped, truncated, callCount };
+  return { videoIds, items, skipped, truncated, callCount };
 }
