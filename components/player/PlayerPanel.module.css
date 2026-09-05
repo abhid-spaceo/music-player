@@ -125,11 +125,12 @@
   place-items: center;
   border: 0;
   border-radius: 50%;
-  background: var(--bone);
-  color: var(--base);
+  /* Token-driven: flat --bone in the current theme, a gradient in Glass. */
+  background: var(--play-bg);
+  color: var(--play-fg);
   cursor: pointer;
 }
-.primary:hover { background: #fff; }
+.primary:hover { filter: brightness(1.08); }
 
 .flip { display: flex; transform: scaleX(-1); }
 
@@ -284,4 +285,15 @@
 
 @media (min-width: 1460px) {
   .attrLong { display: inline; }
+}
+
+/* ---- Glass theme: frosted bar + gradient artwork placeholder ------------- */
+:global([data-theme='glass']) .panel {
+  background: var(--raised);
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  backdrop-filter: blur(var(--glass-blur));
+}
+/* Empty artwork becomes a gradient tile; a real thumbnail still covers it. */
+:global([data-theme='glass']) .art {
+  background: var(--play-bg);
 }

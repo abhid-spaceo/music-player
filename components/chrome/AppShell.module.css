@@ -11,10 +11,33 @@
 }
 
 .main {
+  /* Sits above the ambient glow layer (glass). Harmless in the current theme. */
+  position: relative;
+  z-index: 1;
   display: flex;
   flex-direction: column;
   flex: 1;
   min-height: 0;
+}
+
+/*
+ * Ambient glow behind everything. Off in the current theme; in Glass it paints
+ * the preset gradient, tinted by --art-glow (sampled from the current track's
+ * artwork). Radial gradients give the glow without an expensive filter blur.
+ */
+.ambient {
+  display: none;
+}
+:global([data-theme='glass']) .ambient {
+  display: block;
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(60% 45% at 50% 2%, var(--art-glow, transparent), transparent 70%),
+    var(--ambient-grad);
+  transition: background 700ms ease;
 }
 
 @media (min-width: 1024px) {

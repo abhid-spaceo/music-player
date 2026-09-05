@@ -1,4 +1,6 @@
 import type { Metadata, Viewport } from 'next';
+import { cookies } from 'next/headers';
+import { THEME_COOKIE, normalizeTheme } from '@/lib/theme/theme';
 
 // Self-hosted fonts. `wght.css` is the upright weight axis only — one variable
 // woff2 covers 400/500/600 with no italic or width axis shipped. Nothing is
@@ -30,9 +32,14 @@ export const viewport: Viewport = {
   viewportFit: 'cover',
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  // Decided on the server from the cookie, so the correct theme paints on the
+  // first frame — no flash, no blocking inline script. Missing cookie → Glass.
+  const store = await cookies();
+  const theme = normalizeTheme(store.get(THEME_COOKIE)?.value);
+
   return (
-    <html lang="en">
+    <html lang="en" data-theme={theme} style={{ colorScheme: 'dark' }}>
       <body>{children}</body>
     </html>
   );

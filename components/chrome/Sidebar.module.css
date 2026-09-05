@@ -29,4 +29,12 @@
   }
 
   .link[aria-current='page'] { color: var(--bone); }
+
+  /* Glass theme: frosted rail above the ambient glow. */
+  :global([data-theme='glass']) .sidebar {
+    background: var(--raised);
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    backdrop-filter: blur(var(--glass-blur));
+    z-index: 1;
+  }
 }

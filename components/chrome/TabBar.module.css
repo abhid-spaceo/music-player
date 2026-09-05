@@ -52,3 +52,10 @@
 @media (min-width: 1024px) {
   .bar { display: none; }
 }
+
+/* Glass theme: frosted bar over the ambient glow. */
+:global([data-theme='glass']) .bar {
+  background: var(--raised);
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  backdrop-filter: blur(var(--glass-blur));
+}
