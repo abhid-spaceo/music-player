@@ -1,3 +1,4 @@
+import { AccountMenu } from './AccountMenu';
 import styles from './ScreenHeader.module.css';
 
 type Props = {
@@ -14,7 +15,10 @@ export function ScreenHeader({ title, meta, actions, below }: Props) {
     <header className={styles.header}>
       <div className={styles.titleRow}>
         <h1 className={`${styles.title} truncate`}>{title}</h1>
-        {actions ? <div className={styles.actions}>{actions}</div> : null}
+        <div className={styles.right}>
+          {actions ? <div className={styles.actions}>{actions}</div> : null}
+          <AccountMenu />
+        </div>
       </div>
       {meta ? <p className={`${styles.meta} tnum`}>{meta}</p> : null}
       {below ? <div className={styles.below}>{below}</div> : null}

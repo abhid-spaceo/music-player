@@ -7,13 +7,33 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: 12px 8px;
+  /* When the title plus the right-hand controls cannot share one line (Library
+     on a narrow phone), the controls drop to a tidy second line instead of
+     squeezing the title down to an ellipsis. */
+  flex-wrap: wrap;
 }
 
 .title {
   font: var(--t-screen-title);
   letter-spacing: var(--ls-title);
   min-width: 0;
+  /* Keep the full screen name; don't let it shrink to make room for controls. */
+  flex: 1 0 auto;
+}
+
+/* Right-hand cluster: any screen actions plus the account menu, pinned opposite
+   the title. On a narrow screen where the screen's own buttons already fill the
+   row (e.g. Library's Play All + shuffle + search), the account menu wraps to a
+   tidy second line, still right-aligned, rather than crowding the buttons. */
+.right {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  flex: none;
+  /* On its own wrapped line, sit at the right edge under the controls above. */
+  margin-left: auto;
 }
 
 .actions {
