@@ -19,6 +19,21 @@
   background: var(--signal);
 }
 
+/* Glass theme row states (design 3a/A7): default = no fill, hover = faint glass
+   fill, playing = tinted wash + a thicker accent edge. Plain alpha only — no
+   per-row backdrop blur (the design's Android frame-budget rule). Column
+   alignment is unchanged (no padding shift), so ColumnHeader still lines up. */
+:global([data-theme='glass']) .row:hover {
+  background: var(--glass-1);
+}
+:global([data-theme='glass']) .row[data-playing='true'] {
+  background: var(--playing-wash);
+}
+:global([data-theme='glass']) .row[data-playing='true']::before {
+  width: 3px;
+  background: var(--accent-2);
+}
+
 .playHit { position: absolute; inset: 0; z-index: 0; }
 
 .text { position: relative; z-index: 1; flex: 1; min-width: 0; pointer-events: none; }

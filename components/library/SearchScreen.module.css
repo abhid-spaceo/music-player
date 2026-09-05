@@ -12,3 +12,14 @@
 }
 .input::placeholder { color: var(--dimmer); }
 .input:focus-visible { outline: 2px solid var(--bone); outline-offset: -2px; }
+
+/* Glass theme: frosted search field. Result rows are shared TrackRow, so they
+   already pick up the glass row states. */
+:global([data-theme='glass']) .input {
+  border-radius: var(--r-pill);
+  border-color: var(--edge-1);
+  background: var(--glass-1);
+}
+:global([data-theme='glass']) .input:focus-visible {
+  outline-color: var(--edge-hi);
+}

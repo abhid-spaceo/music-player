@@ -30,3 +30,17 @@
   background: var(--bone);
   color: var(--base);
 }
+
+/* Glass theme: frosted pills. Inactive = faint glass fill; active = a brighter
+   glass level with ink text (not the stark white the current theme uses). */
+:global([data-theme='glass']) .chip {
+  border-radius: var(--r-pill);
+  border-color: var(--edge-1);
+  background: var(--glass-1);
+  color: var(--dim);
+}
+:global([data-theme='glass']) .chip[aria-pressed='true'] {
+  border-color: var(--edge-hi);
+  background: var(--glass-3);
+  color: var(--ink);
+}

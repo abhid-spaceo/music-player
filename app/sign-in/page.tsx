@@ -3,10 +3,13 @@
 import { useState, useSyncExternalStore } from 'react';
 import { useRouter } from 'next/navigation';
 import { apiSend } from '@/lib/api/client';
+import { useTheme } from '@/lib/theme/ThemeProvider';
+import { GlassSignIn } from './GlassSignIn';
 import styles from './page.module.css';
 
 export default function SignInPage() {
   const router = useRouter();
+  const theme = useTheme();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -37,6 +40,21 @@ export default function SignInPage() {
     } finally {
       setBusy(false);
     }
+  }
+
+  if (theme === 'glass') {
+    return (
+      <GlassSignIn
+        email={email}
+        password={password}
+        onEmail={setEmail}
+        onPassword={setPassword}
+        onSubmit={submit}
+        busy={busy}
+        hydrated={hydrated}
+        error={error}
+      />
+    );
   }
 
   return (
