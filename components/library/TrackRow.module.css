@@ -19,6 +19,54 @@
   background: var(--signal);
 }
 
+/* Leading artwork — hidden in the current theme (text-only rows), a 40px
+   gradient-backed thumbnail in glass (design: every row carries artwork). */
+.art { display: none; }
+:global([data-theme='glass']) .art {
+  position: relative;
+  z-index: 1;
+  flex: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: linear-gradient(140deg, #8a5cff, #ff8fc3);
+  pointer-events: none;
+}
+:global([data-theme='glass']) .artImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+/* Three equaliser bars over the playing row's artwork. */
+:global([data-theme='glass']) .eq {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 2px;
+  padding-bottom: 7px;
+  background: rgba(5, 4, 10, 0.5);
+}
+:global([data-theme='glass']) .eq i {
+  width: 2px;
+  height: 60%;
+  background: var(--accent);
+  transform-origin: bottom;
+  animation: eqbounce 0.9s ease-in-out infinite;
+}
+:global([data-theme='glass']) .eq i:nth-child(2) { animation-delay: 0.15s; }
+:global([data-theme='glass']) .eq i:nth-child(3) { animation-delay: 0.3s; }
+@keyframes eqbounce {
+  0%, 100% { transform: scaleY(0.4); }
+  50% { transform: scaleY(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  :global([data-theme='glass']) .eq i { animation: none; }
+}
+
 /* Glass theme row states (design 3a/A7): default = no fill, hover = faint glass
    fill, playing = tinted wash + a thicker accent edge. Plain alpha only — no
    per-row backdrop blur (the design's Android frame-budget rule). Column
