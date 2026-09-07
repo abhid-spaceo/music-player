@@ -1,0 +1,110 @@
+/* Shared by both admin surfaces, so it leans on theme tokens rather than
+   either screen's own design language. */
+.panel {
+  margin-top: 24px;
+  padding: 18px;
+  border: 1px solid var(--line, #26262b);
+  border-radius: 12px;
+  background: var(--bg-raised, #17171a);
+}
+
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  align-items: baseline;
+  margin-bottom: 4px;
+}
+
+.title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text, #ededef);
+}
+
+.badge {
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-dim, #8a8a92);
+}
+
+.lede {
+  margin: 0 0 14px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-dim, #8a8a92);
+}
+
+.rows {
+  display: grid;
+  gap: 10px;
+}
+
+.input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--line, #26262b);
+  border-radius: 8px;
+  background: var(--bg-deep, #0f0f11);
+  color: var(--text, #ededef);
+  font-size: 14px;
+  font-family: inherit;
+}
+
+.input:focus-visible {
+  outline: 2px solid var(--accent, #7aa2ff);
+  outline-offset: 1px;
+}
+
+.pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+@media (max-width: 560px) {
+  .pair {
+    grid-template-columns: 1fr;
+  }
+}
+
+.foot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 12px;
+}
+
+.submit {
+  min-height: 40px;
+  padding: 0 16px;
+  border: 1px solid var(--text, #ededef);
+  border-radius: 8px;
+  background: var(--text, #ededef);
+  color: var(--bg-deep, #0b0b0c);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.submit:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.note {
+  margin: 12px 0 0;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.good {
+  color: var(--ok, #6ee7a8);
+}
+
+.bad {
+  color: var(--danger, #ff8a8a);
+}

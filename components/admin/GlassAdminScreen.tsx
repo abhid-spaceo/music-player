@@ -9,6 +9,7 @@ import {
   type Counts,
   type Outcome,
 } from '@/lib/admin/addLinks';
+import { AddDirectAudio } from './AddDirectAudio';
 import { AddLinksResults } from './glass/AddLinksResults';
 import styles from './GlassAdminScreen.module.css';
 
@@ -120,6 +121,8 @@ export function GlassAdminScreen() {
         </p>
       ) : null}
       {batch ? <AddLinksResults outcomes={batch.outcomes} counts={batch.counts} /> : null}
+
+      <AddDirectAudio />
     </div>
   );
 }
