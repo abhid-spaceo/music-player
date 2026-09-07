@@ -17,12 +17,15 @@ const csp = [
   // The one iframe this app needs. nocookie is what we actually embed.
   'frame-src https://www.youtube.com https://www.youtube-nocookie.com',
   // Thumbnails are hotlinked from YouTube's CDN rather than re-encoded.
-  "img-src 'self' data: https://i.ytimg.com",
+  // archive.org serves the cover art for directly-linked audio.
+  "img-src 'self' data: https://i.ytimg.com https://archive.org",
   `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ''} https://www.youtube.com https://www.youtube-nocookie.com`,
   "style-src 'self' 'unsafe-inline'",
   "font-src 'self'",
   `connect-src 'self'${isDev ? ' ws: wss:' : ''}`,
-  "media-src 'self' https://www.youtube.com https://www.youtube-nocookie.com",
+  // archive.org redirects a download to a numbered node (dn721909.ca.archive.org),
+  // so the wildcard is required as well as the apex.
+  "media-src 'self' https://www.youtube.com https://www.youtube-nocookie.com https://archive.org https://*.archive.org",
   "base-uri 'none'",
   "form-action 'self'",
 ].join('; ');

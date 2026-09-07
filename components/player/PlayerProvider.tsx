@@ -16,7 +16,15 @@ import {
   type YTPlayer,
   type YTPlayerState,
 } from '@/lib/youtube/iframe-api';
-import type { Track } from '@/lib/library/types';
+import type { Track, TrackSource } from '@/lib/library/types';
+import { audio } from '@/lib/player/audio-element';
+import {
+  attachMediaActions,
+  clearMediaSession,
+  setMediaMetadata,
+  setMediaPlaybackState,
+  setMediaPosition,
+} from '@/lib/player/media-session';
 import { reorder, removeAt as removeAtPure, indexAfterRemove } from '@/lib/player/queue';
 import { shouldRecordPlay } from '@/lib/player/record-play';
 import { apiSend } from '@/lib/api/client';
@@ -79,6 +87,12 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   const [expanded, setExpanded] = useState(false);
   /** Last track id we recorded a play for — dedupes repeats/seeks. */
   const lastRecordedRef = useRef<string | null>(null);
+
+  /**
+   * Which engine currently owns playback. Every callback checks it, so the
+   * idle engine's stray events can never move the UI or the queue.
+   */
+  const activeSourceRef = useRef<TrackSource>('youtube');
 
   const playerRef = useRef<YTPlayer | null>(null);
   const hostRef = useRef<HTMLDivElement | null>(null);
@@ -151,13 +165,46 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  /**
+   * Start a track on whichever engine owns it, and silence the other one.
+   * Two players running at once is the worst failure here, so the handover
+   * always stops before it starts.
+   */
+  const startTrack = useCallback((track: Track) => {
+    if (track.source === 'direct' && track.audioUrl) {
+      if (readyRef.current) {
+        try {
+          playerRef.current?.pauseVideo();
+        } catch {
+          // A player that will not pause is still a player we are leaving.
+        }
+      }
+      activeSourceRef.current = 'direct';
+      audio.setVolume(volumeRef.current);
+      audio.setMuted(mutedRef.current);
+      audio.load(track.audioUrl);
+      // Only our own <audio> can own the lock screen; the iframe keeps its own.
+      setMediaMetadata(track);
+      return;
+    }
+    activeSourceRef.current = 'youtube';
+    audio.stop();
+    clearMediaSession();
+    startYouTube(track);
+  }, [startYouTube]);
+
   const advance = useCallback((delta: number, auto: boolean) => {
     const q = queueRef.current;
     if (q.length === 0) return;
 
     if (auto && repeatRef.current === 'one') {
-      playerRef.current?.seekTo(0, true);
-      playerRef.current?.playVideo();
+      if (activeSourceRef.current === 'direct') {
+        audio.seek(0);
+        audio.play();
+      } else {
+        playerRef.current?.seekTo(0, true);
+        playerRef.current?.playVideo();
+      }
       return;
     }
 
@@ -179,8 +226,8 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     recordPlay(track);
     // loadVideoById starts playback itself. It is only reached after a
     // user-initiated first play, so the autoplay policy is satisfied.
-    startYouTube(track);
-  }, [recordPlay, startYouTube]);
+    startTrack(track);
+  }, [recordPlay, startTrack]);
 
   const registerHost = useCallback((node: HTMLDivElement | null) => {
     hostRef.current = node;
@@ -257,6 +304,9 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!playing) return;
     const id = window.setInterval(() => {
+      // A direct track reports its own position through timeupdate. Polling it
+      // here as well would overwrite a fresher value with a staler one.
+      if (activeSourceRef.current === 'direct') return;
       const player = playerRef.current;
       if (!player || !readyRef.current) return;
       setPosition(player.getCurrentTime());
@@ -265,6 +315,75 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     }, 500);
     return () => window.clearInterval(id);
   }, [playing]);
+
+  /**
+   * Wire the <audio> element's events into state. Every handler checks which
+   * engine is active first: the element fires a `pause` when we hand playback
+   * back to YouTube, and acting on that would stop the queue.
+   */
+  useEffect(() => {
+    audio.attach({
+      playingChanged: (isPlaying) => {
+        if (activeSourceRef.current !== 'direct') return;
+        setPlaying(isPlaying);
+        setMediaPlaybackState(isPlaying);
+      },
+      ended: () => {
+        if (activeSourceRef.current !== 'direct') return;
+        advance(1, true);
+      },
+      failed: (message) => {
+        if (activeSourceRef.current !== 'direct') return;
+        const track = queueRef.current[indexRef.current];
+        setError({ reason: 'audio', message, trackId: track?.id ?? '' });
+        setPlaying(false);
+      },
+      progress: (pos, dur) => {
+        if (activeSourceRef.current !== 'direct') return;
+        setPosition(pos);
+        if (dur) setDuration(dur);
+        setMediaPosition(pos, dur);
+      },
+    });
+  }, [advance]);
+
+  /**
+   * Lock-screen and notification buttons. Registered once; they act on the
+   * <audio> element, which is the only playback we own.
+   */
+  useEffect(() => {
+    attachMediaActions({
+      play: () => audio.play(),
+      pause: () => audio.pause(),
+      next: () => advance(1, false),
+      previous: () => advance(-1, false),
+      stop: () => audio.pause(),
+      seekTo: (seconds) => {
+        audio.seek(seconds);
+        setPosition(seconds);
+      },
+      seekBy: (offset) => {
+        const target = Math.max(0, audio.position() + offset);
+        audio.seek(target);
+        setPosition(target);
+      },
+    });
+  }, [advance]);
+
+  /**
+   * Coming back to the foreground, trust the element over our own state: a
+   * background pause (an incoming call) happened without us hearing about it.
+   * Never reload or re-seek here — that would restart the track.
+   */
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.hidden || activeSourceRef.current !== 'direct') return;
+      setPosition(audio.position());
+      setPlaying(audio.isPlaying());
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => document.removeEventListener('visibilitychange', onVisible);
+  }, []);
 
   const playQueue = useCallback((tracks: Track[], startIndex = 0) => {
     if (tracks.length === 0) return;
@@ -281,10 +400,18 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     // This runs inside the click handler that reached us, so it counts as the
     // user gesture that unlocks programmatic playback later. A track arriving
     // before the player exists is parked and picked up by onReady.
-    startYouTube(track);
-  }, [recordPlay, startYouTube]);
+    startTrack(track);
+  }, [recordPlay, startTrack]);
 
   const toggle = useCallback(() => {
+    if (activeSourceRef.current === 'direct') {
+      if (audio.isPlaying()) audio.pause();
+      else {
+        audio.play();
+        unlockedRef.current = true;
+      }
+      return;
+    }
     const player = playerRef.current;
     if (!player || !readyRef.current) return;
     if (player.getPlayerState() === PLAYER_STATE.PLAYING) player.pauseVideo();
@@ -295,9 +422,15 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const seek = useCallback((seconds: number) => {
+    const target = Math.max(0, seconds);
+    if (activeSourceRef.current === 'direct') {
+      audio.seek(target);
+      setPosition(target);
+      return;
+    }
     if (!readyRef.current) return;
-    playerRef.current?.seekTo(Math.max(0, seconds), true);
-    setPosition(Math.max(0, seconds));
+    playerRef.current?.seekTo(target, true);
+    setPosition(target);
   }, []);
 
   const jumpTo = useCallback((i: number) => {
@@ -307,8 +440,8 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     setIndex(i);
     setError(null);
     recordPlay(track);
-    startYouTube(track);
-  }, [recordPlay, startYouTube]);
+    startTrack(track);
+  }, [recordPlay, startTrack]);
 
   const reorderQueue = useCallback((from: number, to: number) => {
     setQueue((prev) => {
@@ -335,6 +468,10 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   const setVolume = useCallback((next: number) => {
     const clamped = Math.round(Math.min(100, Math.max(0, next)));
     setVolumeState(clamped);
+    audio.setVolume(clamped);
+    if (clamped > 0 && mutedRef.current) {
+      audio.setMuted(false);
+    }
     const player = playerRef.current;
     if (!player) return;
     try {
@@ -351,6 +488,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   const toggleMute = useCallback(() => {
     const next = !mutedRef.current;
     setMuted(next);
+    audio.setMuted(next);
     const player = playerRef.current;
     if (!player) return;
     try {
