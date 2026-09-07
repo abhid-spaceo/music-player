@@ -45,7 +45,8 @@ export async function GET(request: Request) {
       // `id` is the tiebreaker. Without it, rows sharing an added_at — every
       // row of a bulk add does — have undefined relative order, so paging can
       // show a track twice and skip another.
-      `SELECT t.id, t.youtube_id, t.title, t.channel_title, t.duration_sec,
+      `SELECT t.id, t.youtube_id, t.audio_url, t.source,
+              t.title, t.channel_title, t.duration_sec,
               t.thumbnail_url, t.sort_artist, t.note, t.availability,
               t.made_for_kids, t.age_restricted, t.live_broadcast_content,
               t.added_at,
