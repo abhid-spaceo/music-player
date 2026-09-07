@@ -1,0 +1,318 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Background audio test</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 16px 16px 48px;
+    background: #0B0B0C; color: #EDEDEF;
+    font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+  h1 { font-size: 18px; margin: 0 0 4px; }
+  .sub { color: #8A8A92; font-size: 13px; margin: 0 0 20px; }
+  .card {
+    background: #17171A; border: 1px solid #26262B; border-radius: 12px;
+    padding: 14px; margin-bottom: 14px;
+  }
+  .track { font-weight: 600; font-size: 15px; }
+  .artist { color: #8A8A92; font-size: 13px; margin-top: 2px; }
+  .state { font-variant-numeric: tabular-nums; margin-top: 10px; font-size: 13px; color: #8A8A92; }
+  .state b { color: #EDEDEF; font-weight: 600; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+  button {
+    flex: 1 1 auto; min-width: 84px; min-height: 52px;
+    background: #26262B; color: #EDEDEF; border: 1px solid #35353C;
+    border-radius: 10px; font-size: 15px; font-weight: 600;
+    cursor: pointer; touch-action: manipulation;
+  }
+  button:active { background: #35353C; }
+  button.primary { background: #E8E8EC; color: #0B0B0C; border-color: #E8E8EC; }
+  ol { margin: 0 0 0 4px; padding-left: 18px; color: #C9C9D1; font-size: 14px; }
+  ol li { margin-bottom: 8px; }
+  #log {
+    font: 12px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace;
+    background: #0F0F11; border: 1px solid #26262B; border-radius: 10px;
+    padding: 10px; height: 260px; overflow-y: auto; white-space: pre-wrap;
+    word-break: break-word; color: #A9A9B4;
+  }
+  .gap { color: #FFD479; }
+  .good { color: #6EE7A8; }
+  .bad { color: #FF8A8A; }
+  .verdict { margin-top: 10px; font-size: 13px; }
+</style>
+</head>
+<body>
+
+<h1>Background audio test</h1>
+<p class="sub">Throwaway page. Not part of the app. Proves whether a plain
+&lt;audio&gt; element keeps playing when the phone is locked or backgrounded.</p>
+
+<div class="card">
+  <div class="track" id="title">—</div>
+  <div class="artist" id="artist">—</div>
+  <div class="state">
+    state <b id="st">idle</b> &nbsp;·&nbsp; position <b id="pos">0:00</b> / <b id="dur">0:00</b>
+  </div>
+  <div class="row">
+    <button class="primary" id="play">Play</button>
+    <button id="prev">Prev</button>
+    <button id="next">Next</button>
+  </div>
+  <div class="row">
+    <button id="skipend">Jump to last 15s (tests auto-advance)</button>
+  </div>
+</div>
+
+<div class="card">
+  <strong style="font-size:14px">What to do</strong>
+  <ol style="margin-top:10px">
+    <li>Tap <b>Play</b>. Wait until you hear music.</li>
+    <li>Press the <b>power key</b> to lock the screen. Music should keep playing.</li>
+    <li>Look at the <b>lock screen</b> — you should see the title, artist, artwork
+        and working play / pause / next / prev.</li>
+    <li>Unlock, come back here, and read the log below.</li>
+    <li>Repeat with the <b>home key</b> instead, and by switching to another app for 2+ minutes.</li>
+    <li>Tap <b>Jump to last 15s</b>, lock the screen, and wait — this proves the queue
+        can advance to the next track with no finger on the screen.</li>
+  </ol>
+</div>
+
+<div class="card">
+  <strong style="font-size:14px">Log</strong>
+  <div class="verdict" id="verdict">Press Play to begin.</div>
+  <div class="row" style="margin-bottom:10px">
+    <button id="clear" style="min-height:40px;font-size:13px">Clear log</button>
+  </div>
+  <div id="log"></div>
+</div>
+
+<script>
+/*
+ * The whole point of this test: ONE <audio> element that lives for the life of
+ * the page. Phones unlock the ELEMENT, not the page — so reusing this single
+ * element is what lets track 2 start with no user gesture.
+ */
+var audio = new Audio();
+audio.preload = 'metadata';
+
+var TRACKS = [
+  {
+    title: 'Some Of These Days',
+    artist: 'Art Gillham, The Whispering Pianist',
+    src: 'https://archive.org/download/15419471948SomeOfTheseDays/154%201947-1948%20Some%20Of%20These%20Days.mp3',
+    art: 'https://archive.org/services/img/15419471948SomeOfTheseDays'
+  },
+  {
+    title: 'Freundliche Vision',
+    artist: 'Heinrich Schlusnus',
+    src: 'https://archive.org/download/62876-schlusnus-freundliche-vision/62876%20Schlusnus%20-%20Freundliche%20Vision.mp3',
+    art: 'https://archive.org/services/img/62876-schlusnus-freundliche-vision'
+  },
+  {
+    title: 'Overture: Der Fliegende Holländer',
+    artist: 'Philharmonia Orchestra',
+    src: 'https://archive.org/download/78_overture-der-fleigende-hollander-pt1_philharmonia-orchestra/C_4176_2EA_16252-3.mp3',
+    art: 'https://archive.org/services/img/78_overture-der-fleigende-hollander-pt1_philharmonia-orchestra'
+  }
+];
+
+var i = 0;
+var logEl = document.getElementById('log');
+var started = false;
+
+function clock() {
+  var d = new Date();
+  return String(d.getHours()).padStart(2,'0') + ':' +
+         String(d.getMinutes()).padStart(2,'0') + ':' +
+         String(d.getSeconds()).padStart(2,'0');
+}
+function fmt(s) {
+  if (!isFinite(s) || s < 0) s = 0;
+  return Math.floor(s/60) + ':' + String(Math.floor(s%60)).padStart(2,'0');
+}
+function log(msg, cls) {
+  var line = document.createElement('div');
+  if (cls) line.className = cls;
+  line.textContent = clock() + '  ' + msg;
+  logEl.appendChild(line);
+  logEl.scrollTop = logEl.scrollHeight;
+}
+
+/* ---- MediaSession: what puts controls on the lock screen ---- */
+function updateMediaSession(t) {
+  if (!('mediaSession' in navigator)) {
+    log('MediaSession NOT supported by this browser', 'bad');
+    return;
+  }
+  navigator.mediaSession.metadata = new MediaMetadata({
+    title: t.title,
+    artist: t.artist,
+    album: 'Background audio test',
+    artwork: [
+      { src: t.art, sizes: '512x512', type: 'image/jpeg' },
+      { src: t.art, sizes: '256x256', type: 'image/jpeg' }
+    ]
+  });
+}
+
+function wireHandlers() {
+  if (!('mediaSession' in navigator)) return;
+  var ms = navigator.mediaSession;
+  var handlers = {
+    play:          function () { log('lock-screen PLAY pressed', 'good'); audio.play(); },
+    pause:         function () { log('lock-screen PAUSE pressed', 'good'); audio.pause(); },
+    previoustrack: function () { log('lock-screen PREV pressed', 'good'); go(-1); },
+    nexttrack:     function () { log('lock-screen NEXT pressed', 'good'); go(1); },
+    stop:          function () { log('lock-screen STOP pressed', 'good'); audio.pause(); },
+    seekbackward:  function (d) { audio.currentTime = Math.max(0, audio.currentTime - (d.seekOffset || 10)); },
+    seekforward:   function (d) { audio.currentTime = audio.currentTime + (d.seekOffset || 10); },
+    seekto:        function (d) { if (d.seekTime != null) audio.currentTime = d.seekTime; }
+  };
+  Object.keys(handlers).forEach(function (name) {
+    try { ms.setActionHandler(name, handlers[name]); }
+    catch (e) { log('handler "' + name + '" not supported', 'gap'); }
+  });
+}
+
+function load(n, autoplay) {
+  i = (n + TRACKS.length) % TRACKS.length;
+  var t = TRACKS[i];
+  document.getElementById('title').textContent = t.title;
+  document.getElementById('artist').textContent = t.artist;
+  /* Only the src changes. The element itself is never replaced. */
+  audio.src = t.src;
+  updateMediaSession(t);
+  log('loaded [' + (i+1) + '/' + TRACKS.length + '] ' + t.title);
+  if (autoplay) {
+    audio.play().then(function () {
+      log('play() resolved WITHOUT a user gesture', 'good');
+    }).catch(function (e) {
+      log('play() BLOCKED: ' + e.name + ' — ' + e.message, 'bad');
+    });
+  }
+}
+
+function go(delta) { load(i + delta, true); }
+
+/* ---- audio element events ---- */
+audio.addEventListener('playing', function () {
+  document.getElementById('st').textContent = 'playing';
+  if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
+  log('playing');
+});
+audio.addEventListener('pause', function () {
+  document.getElementById('st').textContent = 'paused';
+  if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused';
+  log('paused  (if you did not press pause, something interrupted it)', 'gap');
+});
+audio.addEventListener('ended', function () {
+  log('track ended — advancing with no user gesture', 'good');
+  go(1);
+});
+audio.addEventListener('error', function () {
+  var e = audio.error;
+  log('AUDIO ERROR code=' + (e && e.code) + ' ' + (e && e.message), 'bad');
+});
+audio.addEventListener('stalled', function () { log('stalled', 'gap'); });
+audio.addEventListener('waiting', function () { log('buffering', 'gap'); });
+audio.addEventListener('loadedmetadata', function () {
+  document.getElementById('dur').textContent = fmt(audio.duration);
+});
+
+/* Progress from the element itself, never from a timer. */
+audio.addEventListener('timeupdate', function () {
+  document.getElementById('pos').textContent = fmt(audio.currentTime);
+  if ('mediaSession' in navigator && navigator.mediaSession.setPositionState && isFinite(audio.duration)) {
+    try {
+      navigator.mediaSession.setPositionState({
+        duration: audio.duration,
+        position: Math.min(audio.currentTime, audio.duration),
+        playbackRate: audio.playbackRate
+      });
+    } catch (e) { /* ignore */ }
+  }
+});
+
+/*
+ * Heartbeat. Browsers throttle timers in the background, so a GAP here is
+ * expected and harmless. The thing that matters is whether audio.currentTime
+ * moved forward across that gap — if it did, the music played while you were
+ * away. That is the proof.
+ */
+var lastBeat = null;
+var lastTime = null;
+setInterval(function () {
+  if (audio.paused) { lastBeat = null; lastTime = null; return; }
+  var now = Date.now();
+  var t = audio.currentTime;
+  if (lastBeat !== null) {
+    var wall = (now - lastBeat) / 1000;
+    var moved = t - lastTime;
+    if (wall > 4) {
+      if (moved > wall * 0.7) {
+        log('BACKGROUND GAP ' + wall.toFixed(0) + 's — audio advanced ' +
+            moved.toFixed(0) + 's. IT KEPT PLAYING.', 'good');
+        verdict('Background playback WORKED.', 'good');
+      } else {
+        log('BACKGROUND GAP ' + wall.toFixed(0) + 's — audio advanced only ' +
+            moved.toFixed(0) + 's. IT WAS STOPPED.', 'bad');
+        verdict('Background playback FAILED — audio was suspended.', 'bad');
+      }
+    }
+  }
+  lastBeat = now; lastTime = t;
+}, 2000);
+
+function verdict(msg, cls) {
+  var v = document.getElementById('verdict');
+  v.textContent = msg;
+  v.className = 'verdict ' + cls;
+}
+
+document.addEventListener('visibilitychange', function () {
+  log('page became ' + (document.hidden ? 'HIDDEN' : 'VISIBLE'));
+  if (!document.hidden) {
+    /* Re-sync the UI to reality. Never reload, never re-seek. */
+    document.getElementById('pos').textContent = fmt(audio.currentTime);
+    document.getElementById('st').textContent = audio.paused ? 'paused' : 'playing';
+    log('back in foreground: audio is ' + (audio.paused ? 'PAUSED' : 'PLAYING') +
+        ' at ' + fmt(audio.currentTime), audio.paused ? 'bad' : 'good');
+  }
+});
+
+/* ---- buttons ---- */
+document.getElementById('play').addEventListener('click', function () {
+  if (!started) {
+    started = true;
+    wireHandlers();
+    load(0, false);
+  }
+  if (audio.paused) {
+    audio.play().then(function () {
+      this && 0;
+    }).catch(function (e) { log('play() failed: ' + e.name + ' ' + e.message, 'bad'); });
+    this.textContent = 'Pause';
+  } else {
+    audio.pause();
+    this.textContent = 'Play';
+  }
+});
+document.getElementById('next').addEventListener('click', function () { started = true; wireHandlers(); go(1); });
+document.getElementById('prev').addEventListener('click', function () { started = true; wireHandlers(); go(-1); });
+document.getElementById('skipend').addEventListener('click', function () {
+  if (!isFinite(audio.duration)) { log('duration unknown yet — press Play first', 'gap'); return; }
+  audio.currentTime = Math.max(0, audio.duration - 15);
+  log('jumped to ' + fmt(audio.currentTime) + ' — lock the screen now and wait');
+});
+document.getElementById('clear').addEventListener('click', function () { logEl.textContent = ''; });
+
+log('page loaded. secure context = ' + window.isSecureContext +
+    ' | MediaSession = ' + ('mediaSession' in navigator),
+    window.isSecureContext ? 'good' : 'bad');
+</script>
+</body>
+</html>
