@@ -32,7 +32,10 @@ export async function GET(request: Request) {
     if (!authorized) return fail('Not authorized', 401);
 
     const stale = await query<{ youtube_id: string }>(
+      // Direct-audio tracks have no video id and nothing to ask YouTube about.
+      // Without this filter they would be swept up and sent as NULL.
       `SELECT youtube_id FROM tracks
+        WHERE source = 'youtube'
         ORDER BY availability_checked_at ASC NULLS FIRST
         LIMIT $1`,
       [MAX_BATCHES * MAX_IDS_PER_CALL],

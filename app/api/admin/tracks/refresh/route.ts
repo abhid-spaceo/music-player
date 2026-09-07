@@ -23,7 +23,9 @@ export async function POST(request: Request) {
     const limit = parsed.success ? parsed.data.limit : 50;
 
     const stale = await query<{ youtube_id: string }>(
+      // YouTube tracks only — a direct-audio track has no video to refresh.
       `SELECT youtube_id FROM tracks
+        WHERE source = 'youtube'
         ORDER BY availability_checked_at ASC NULLS FIRST
         LIMIT $1`,
       [limit],
