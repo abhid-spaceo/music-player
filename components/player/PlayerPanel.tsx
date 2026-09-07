@@ -183,7 +183,9 @@ export function PlayerPanel() {
             style={{ '--pos': `${muted ? 0 : volume}%` } as React.CSSProperties}
           />
 
-          {current ? (
+          {/* Only a YouTube track has somewhere to link to. Without the guard a
+              direct-audio track renders href="...?v=null". */}
+          {current?.youtubeId ? (
             <a
               className={styles.attribution}
               href={`https://www.youtube.com/watch?v=${current.youtubeId}`}

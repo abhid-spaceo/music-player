@@ -25,7 +25,8 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
     if (!playlist) return fail('No such playlist', 404);
 
     const tracks = await query(
-      `SELECT t.id, t.youtube_id, t.title, t.channel_title, t.duration_sec,
+      `SELECT t.id, t.youtube_id, t.audio_url, t.source,
+              t.title, t.channel_title, t.duration_sec,
               t.sort_artist, t.note, t.availability, t.live_broadcast_content,
               pt.position
          FROM playlist_tracks pt

@@ -5,10 +5,23 @@ export type Availability =
   | 'region_blocked'
   | 'age_restricted';
 
+/**
+ * Where a track's audio comes from, which decides how it plays.
+ *
+ * 'youtube' plays through the sealed YouTube IFrame embed and therefore cannot
+ * play in the background. 'direct' plays a URL through our own <audio> element,
+ * which can. Neither stores audio: both are pointers to somebody else's file.
+ */
+export type TrackSource = 'youtube' | 'direct';
+
 /** A track as the UI uses it. Mapped from the API's snake_case rows. */
 export type Track = {
   id: string;
-  youtubeId: string;
+  source: TrackSource;
+  /** Null on a 'direct' track, which has no video. */
+  youtubeId: string | null;
+  /** Null on a 'youtube' track. The https URL the <audio> element plays. */
+  audioUrl: string | null;
   title: string;
   channelTitle: string;
   durationSec: number;
@@ -27,7 +40,10 @@ export type Track = {
 
 export type ApiTrackRow = {
   id: string;
-  youtube_id: string;
+  youtube_id: string | null;
+  /** Optional: a response cached by the Service Worker predates these columns. */
+  source?: TrackSource;
+  audio_url?: string | null;
   title: string;
   channel_title: string;
   duration_sec: number;
@@ -45,7 +61,11 @@ export type ApiTrackRow = {
 export function toTrack(row: ApiTrackRow): Track {
   return {
     id: row.id,
+    // A cached pre-migration response has neither field. Those rows were all
+    // YouTube by definition, so that is the safe reading.
+    source: row.source ?? 'youtube',
     youtubeId: row.youtube_id,
+    audioUrl: row.audio_url ?? null,
     title: row.title,
     channelTitle: row.channel_title,
     durationSec: row.duration_sec,

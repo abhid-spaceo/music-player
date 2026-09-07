@@ -137,6 +137,20 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
+  /**
+   * Hand a track to the YouTube player, or park it for onReady when the player
+   * does not exist yet. A track with no video id has no YouTube video to play,
+   * so it is ignored here — its audio comes from elsewhere.
+   */
+  const startYouTube = useCallback((track: Track) => {
+    if (!track.youtubeId) return;
+    if (playerRef.current && readyRef.current) {
+      playerRef.current.loadVideoById(track.youtubeId);
+    } else {
+      pendingRef.current = track.youtubeId;
+    }
+  }, []);
+
   const advance = useCallback((delta: number, auto: boolean) => {
     const q = queueRef.current;
     if (q.length === 0) return;
@@ -165,12 +179,8 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     recordPlay(track);
     // loadVideoById starts playback itself. It is only reached after a
     // user-initiated first play, so the autoplay policy is satisfied.
-    if (playerRef.current && readyRef.current) {
-      playerRef.current.loadVideoById(track.youtubeId);
-    } else {
-      pendingRef.current = track.youtubeId;
-    }
-  }, [recordPlay]);
+    startYouTube(track);
+  }, [recordPlay, startYouTube]);
 
   const registerHost = useCallback((node: HTMLDivElement | null) => {
     hostRef.current = node;
@@ -268,17 +278,11 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
 
     unlockedRef.current = true;
 
-    const player = playerRef.current;
-    if (!player || !readyRef.current) {
-      // Not ready yet — remember it and let onReady pick it up.
-      pendingRef.current = track.youtubeId;
-      return;
-    }
-
-    // This call is inside the click handler that reached us, so it counts as
-    // the user gesture that unlocks programmatic playback later.
-    player.loadVideoById(track.youtubeId);
-  }, [recordPlay]);
+    // This runs inside the click handler that reached us, so it counts as the
+    // user gesture that unlocks programmatic playback later. A track arriving
+    // before the player exists is parked and picked up by onReady.
+    startYouTube(track);
+  }, [recordPlay, startYouTube]);
 
   const toggle = useCallback(() => {
     const player = playerRef.current;
@@ -303,12 +307,8 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     setIndex(i);
     setError(null);
     recordPlay(track);
-    if (playerRef.current && readyRef.current) {
-      playerRef.current.loadVideoById(track.youtubeId);
-    } else {
-      pendingRef.current = track.youtubeId;
-    }
-  }, [recordPlay]);
+    startYouTube(track);
+  }, [recordPlay, startYouTube]);
 
   const reorderQueue = useCallback((from: number, to: number) => {
     setQueue((prev) => {
