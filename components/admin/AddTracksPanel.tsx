@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { addLinks, detail, LABEL, summarise, type Outcome } from '@/lib/admin/addLinks';
+import { AddDirectAudio } from './AddDirectAudio';
 import styles from './AdminScreen.module.css';
 
 /**
@@ -89,6 +90,8 @@ export function AddTracksPanel() {
           ))}
         </ul>
       ) : null}
+
+      <AddDirectAudio />
     </div>
   );
 }

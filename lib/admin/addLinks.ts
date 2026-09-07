@@ -113,3 +113,38 @@ export async function addLinks(text: string): Promise<{ outcomes: Outcome[]; cou
   if (!body.ok) throw new Error(body.error);
   return { outcomes: body.data, counts: body.meta };
 }
+
+/** What POST /api/admin/tracks/direct returns on success. */
+export type DirectAdd = { id: string; url: string; title: string; artist: string };
+
+/**
+ * Adds one direct-audio track — audio played through our own <audio> element,
+ * which is what allows background and lock-screen playback. Separate from
+ * `addLinks` because that path is a paste of many YouTube links with no room
+ * for a title, and it costs YouTube quota; this costs none.
+ */
+export async function addDirectTrack(
+  url: string,
+  title: string,
+  artist: string,
+): Promise<DirectAdd> {
+  const session = await fetch('/api/session', { credentials: 'same-origin' });
+  const sessionBody = (await session.json()) as { data?: { csrfToken?: string } };
+
+  const res = await fetch('/api/admin/tracks/direct', {
+    method: 'POST',
+    credentials: 'same-origin',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-csrf-token': sessionBody.data?.csrfToken ?? '',
+    },
+    body: JSON.stringify({ url, title, artist }),
+  });
+
+  const body = (await res.json()) as
+    | { ok: true; data: DirectAdd }
+    | { ok: false; error: string };
+
+  if (!body.ok) throw new Error(body.error);
+  return body.data;
+}
