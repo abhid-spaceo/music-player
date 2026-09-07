@@ -12,6 +12,7 @@ import { usePlayer } from '@/components/player/PlayerProvider';
 import { useArtGlow } from '@/lib/theme/useArtGlow';
 import { useTheme } from '@/lib/theme/ThemeProvider';
 import { Sidebar } from './Sidebar';
+import { GlassSidebar } from './GlassSidebar';
 import { TabBar } from './TabBar';
 import styles from './AppShell.module.css';
 
@@ -63,7 +64,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       style={{ '--player-h': `${playerHeight}px` } as React.CSSProperties}
     >
       <div className={styles.ambient} aria-hidden="true" />
-      <Sidebar role={role} />
+      {theme === 'glass' ? <GlassSidebar role={role} /> : <Sidebar role={role} />}
       <div className={styles.main}>{checked ? children : null}</div>
       <PlayerPanel />
       {theme === 'glass' ? <GlassNowPlaying /> : <NowPlaying />}

@@ -33,6 +33,22 @@ export function TrackRow({ track, playing, onPlay }: Props) {
         }
       />
 
+      {/* Leading artwork (glass design). Hidden in the current theme via CSS, so
+          that theme's text-only rows are unchanged. */}
+      <span className={styles.art} aria-hidden="true">
+        {track.thumbnailUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={track.thumbnailUrl} alt="" className={styles.artImg} />
+        ) : null}
+        {playing ? (
+          <span className={styles.eq}>
+            <i />
+            <i />
+            <i />
+          </span>
+        ) : null}
+      </span>
+
       <div className={styles.text}>
         <div className={`${styles.title} truncate`}>{track.title}</div>
         <div className={`${styles.channel} truncate`}>{track.channelTitle}</div>

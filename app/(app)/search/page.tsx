@@ -1,5 +1,8 @@
 import { SearchScreen } from '@/components/library/SearchScreen';
+import { GlassSearchScreen } from '@/components/library/GlassSearchScreen';
+import { getServerTheme } from '@/lib/theme/getServerTheme';
 
-export default function SearchPage() {
-  return <SearchScreen />;
+export default async function SearchPage() {
+  const theme = await getServerTheme();
+  return theme === 'glass' ? <GlassSearchScreen /> : <SearchScreen />;
 }

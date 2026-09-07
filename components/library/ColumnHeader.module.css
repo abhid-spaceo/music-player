@@ -11,6 +11,14 @@
   color: var(--dim);
 }
 
+/* Glass rows carry a 40px leading thumbnail; add a matching spacer here so the
+   TITLE label still lines up above the titles. Current theme has no art column. */
+:global([data-theme='glass']) .header::before {
+  content: '';
+  flex: none;
+  width: 40px;
+}
+
 .title { flex: 1; min-width: 0; }
 .dl { flex: none; width: var(--dl-col); text-align: center; }
 .time { flex: none; width: var(--time-col); text-align: right; }

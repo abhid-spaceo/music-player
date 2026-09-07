@@ -1,0 +1,219 @@
+/* Glass Browse — desktop artboard "Browse desktop" (1440-wide). Header + chips +
+ * labels stay glass-neutral; colour lives only in the tiles. Tokens only; no
+ * hardcoded palette values. The sidebar owns account, so there is no top bar. */
+
+.screen {
+  display: flex;
+  flex-direction: column;
+  gap: 34px;
+  padding: 32px clamp(20px, 4vw, 52px) 96px;
+  width: 100%;
+  max-width: 1200px;
+  overflow-y: auto;
+}
+
+/* ---- Header --------------------------------------------------------------- */
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+.heading {
+  min-width: 0;
+  max-width: 620px;
+}
+.title {
+  margin: 0;
+  font: 700 34px/1.05 var(--sans);
+  letter-spacing: -0.035em;
+  color: var(--ink);
+}
+.subtitle {
+  margin: 10px 0 0;
+  color: var(--dim);
+  font-size: 14.5px;
+  line-height: 1.6;
+}
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.shuffle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 18px;
+  height: 42px;
+  border: 0;
+  border-radius: var(--r-pill);
+  background: var(--play-bg);
+  color: var(--play-fg);
+  font: 600 13px var(--sans);
+  cursor: pointer;
+}
+.searchBtn {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: var(--r-14);
+  border: 1px solid var(--edge-2);
+  background: var(--glass-1);
+  color: var(--ink);
+  cursor: pointer;
+  -webkit-backdrop-filter: blur(var(--panel-blur-1));
+  backdrop-filter: blur(var(--panel-blur-1));
+}
+
+/* ---- Chips ---------------------------------------------------------------- */
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.chip {
+  flex: none;
+  padding: 8px 14px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--edge-1);
+  background: var(--glass-1);
+  color: var(--dim);
+  font: 500 11px var(--mono);
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.chip[aria-pressed='true'] {
+  background: var(--glass-3);
+  border-color: var(--edge-hi);
+  color: var(--ink);
+}
+
+/* ---- Sections ------------------------------------------------------------- */
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.sectionHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+}
+.sectionLabel {
+  font: 700 11px var(--mono);
+  letter-spacing: 0.16em;
+  color: var(--dim);
+}
+.seeAll {
+  border: 0;
+  background: none;
+  padding: 0;
+  color: var(--accent);
+  font: 500 12px var(--sans);
+  cursor: pointer;
+}
+
+/* ---- Tile grid (up to 5 across) ------------------------------------------- */
+.tileGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 22px;
+}
+
+.tile {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 0;
+  border: 0;
+  background: none;
+  text-align: left;
+  color: var(--ink);
+  cursor: pointer;
+  min-width: 0;
+}
+.tile:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.cover {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  margin-bottom: 8px;
+  border-radius: var(--r-20);
+  overflow: hidden;
+  /* Gradient fallback shown when a track has no thumbnail. */
+  background: linear-gradient(148deg, var(--accent), var(--accent-2));
+  box-shadow: var(--lift-2);
+}
+.coverImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.tile[data-playing='true'] .cover {
+  outline: 2px solid var(--signal);
+  outline-offset: 2px;
+}
+
+.tileName {
+  font: 600 13.5px var(--sans);
+  color: var(--ink);
+  min-width: 0;
+}
+.tileSub {
+  font: 500 10px var(--mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--dim);
+  min-width: 0;
+}
+
+/* ---- Playlist tiles ------------------------------------------------------- */
+.playlistTile {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.playlistCover {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  margin-bottom: 8px;
+  border-radius: var(--r-20);
+  background: linear-gradient(148deg, var(--accent-2), var(--accent));
+  box-shadow: var(--lift-2);
+}
+
+.newTile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  aspect-ratio: 1;
+  border: 1px dashed rgba(255, 255, 255, 0.22);
+  border-radius: var(--r-20);
+  background: none;
+  color: var(--dim);
+  cursor: pointer;
+}
+.plus {
+  font: 300 34px/1 var(--sans);
+  color: var(--ink);
+}
+.newLabel {
+  font: 700 10px var(--mono);
+  letter-spacing: 0.16em;
+  color: var(--dim);
+}
